@@ -43,6 +43,7 @@ class AutoChooser : public wpi::Sendable, public wpi::SendableHelper<AutoChooser
  *
  *   superstructure.stow / .intake / .scoreL1 .. .scoreL4: request that goal; the step succeeds
  *   once the Motion machine says the mechanisms got there.
+ *   superstructure.score: score the held coral (at a reef level); succeeds once it's out.
  *
  * The runner reports as the "Autonomous" machine (live and in logs), and its status goes to
  * Mayhem/Auto/Status, which Mayhem's sim proof reads to decide whether an auto completed.

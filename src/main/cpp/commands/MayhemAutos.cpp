@@ -99,7 +99,24 @@ std::unique_ptr<mayhem::AutoRunner> MayhemAutos::Build(const mayhem::RoutineInfo
       .Bind("superstructure.scoreL1", goTo(Goal::L1))
       .Bind("superstructure.scoreL2", goTo(Goal::L2))
       .Bind("superstructure.scoreL3", goTo(Goal::L3))
-      .Bind("superstructure.scoreL4", goTo(Goal::L4));
+      .Bind("superstructure.scoreL4", goTo(Goal::L4))
+      // Score the held coral; done once it's out (the goal then goes back to STOW by itself).
+      .Bind("superstructure.score",
+            mayhem::Action{[this] { m_superstructure.RequestScore(); },
+                           [this] {
+                             using Coral = Superstructure::Coral;
+                             const Coral c = m_superstructure.CurrentCoral();
+                             if (c == Coral::EMPTY) {
+                               return mayhem::ActionStatus::Succeeded;
+                             }
+                             // Not at a reef level with a coral: nothing to score.
+                             if (c == Coral::HOLDING &&
+                                 m_superstructure.CurrentPhase() == Superstructure::Phase::AT_GOAL) {
+                               m_superstructure.RequestScore();
+                             }
+                             return mayhem::ActionStatus::Running;
+                           },
+                           {}});
   runner->Attach(m_observer, mayhem_generated::autonomous::manifest, Now);
   return runner;
 }

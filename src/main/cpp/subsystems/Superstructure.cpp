@@ -10,6 +10,7 @@
 #include <frc/DriverStation.h>
 #include <frc/Timer.h>
 
+#include "subsystems/endeffector/EndEffectorConstants.h"
 #include "util/Log.h"
 
 namespace SC = SuperstructureConstants;
@@ -20,21 +21,32 @@ double Now() {
 }
 }  // namespace
 
-Superstructure::Superstructure(Elevator& elevator, Pivot& pivot, Wrist& wrist)
+Superstructure::Superstructure(Elevator& elevator, Pivot& pivot, Wrist& wrist,
+                               EndEffector& endEffector)
     : frc2::SubsystemBase("Superstructure"),
       m_elevator{elevator},
       m_pivot{pivot},
-      m_wrist{wrist} {
+      m_wrist{wrist},
+      m_endEffector{endEffector} {
   // The clock times the machines and stamps what they report; InputLogging::On logs every input
   // each loop so log replay can show why a transition fired.
   m_goal.Attach(m_goalObserver, Now, mayhem::InputLogging::On);
   m_motion.Attach(m_motionObserver, Now, mayhem::InputLogging::On);
+  m_coral.Attach(m_coralObserver, Now, mayhem::InputLogging::On);
   m_pivotHoldDeg = pivot.GetReqAngleDeg();
   UpdateTargets(SC::For(m_goal.Current()));
 }
 
 void Superstructure::Request(Goal goal) {
   m_pending = goal;
+}
+
+void Superstructure::RequestScore() {
+  m_scorePending = true;
+}
+
+void Superstructure::SetEjectHeld(bool held) {
+  m_ejectHeld = held;
 }
 
 bool Superstructure::IsAt(Goal goal) const {
@@ -53,7 +65,9 @@ void Superstructure::Periodic() {
   goalIn.l2Pressed = m_pending == Goal::L2;
   goalIn.l3Pressed = m_pending == Goal::L3;
   goalIn.l4Pressed = m_pending == Goal::L4;
+  goalIn.scored = m_justScored;
   m_pending.reset();
+  m_justScored = false;
   m_goal.Settle();
   const SC::Targets goal = SC::For(m_goal.Current());
 
@@ -85,8 +99,44 @@ void Superstructure::Periodic() {
   }
   UpdateTargets(goal);
 
+  // 4. The coral.
+  const Goal current = m_goal.Current();
+  const bool atGoal = m_motion.Current() == Phase::AT_GOAL;
+  const Coral coralBefore = m_coral.Current();
+  auto& coralIn = m_coral.In();
+  coralIn.enabled = enabled;
+  coralIn.hasCoral = m_endEffector.HasCoral();
+  coralIn.scorePressed = m_scorePending;
+  coralIn.ejectHeld = m_ejectHeld;
+  coralIn.atIntake = current == Goal::CORAL_INTAKE && atGoal;
+  coralIn.atReefLevel = (current == Goal::L1 || current == Goal::L2 || current == Goal::L3 ||
+                         current == Goal::L4) &&
+                        atGoal;
+  m_scorePending = false;
+  m_coral.Settle();
+  m_justScored = coralBefore == Coral::SCORING && m_coral.Current() == Coral::EMPTY;
+  switch (m_coral.Current()) {
+    case Coral::EMPTY:
+      m_rollerTarget = 0.0;
+      break;
+    case Coral::INTAKING:
+      m_rollerTarget = EndEffectorConstants::kIntakeVolts;
+      break;
+    case Coral::HOLDING:
+      m_rollerTarget = EndEffectorConstants::kHoldVolts;
+      break;
+    case Coral::SCORING:
+      m_rollerTarget = EndEffectorConstants::kScoreVolts;
+      break;
+    case Coral::EJECTING:
+      m_rollerTarget = EndEffectorConstants::kEjectVolts;
+      break;
+  }
+
   Log::Record("Superstructure/Goal", m_goal.StateName());
   Log::Record("Superstructure/Motion", m_motion.StateName());
+  Log::Record("Superstructure/Coral", m_coral.StateName());
+  Log::Record("Superstructure/RollerTargetVolts", m_rollerTarget);
   Log::Record("Superstructure/ElevatorTargetMeters", m_elevatorTarget);
   Log::Record("Superstructure/PivotTargetDeg", m_pivotTarget);
   Log::Record("Superstructure/WristTargetDeg", m_wristTarget);

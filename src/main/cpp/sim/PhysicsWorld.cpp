@@ -17,6 +17,7 @@
 #include "mayhem/sim/phoenix6.hpp"
 #include "sim/RobotVisualizer.h"
 #include "subsystems/elevator/ElevatorConstants.h"
+#include "subsystems/endeffector/EndEffectorConstants.h"
 #include "subsystems/pivot/PivotConstants.h"
 #include "subsystems/wrist/WristConstants.h"
 #include "util/Log.h"
@@ -25,6 +26,7 @@ namespace sim {
 namespace {
 
 namespace EC = ElevatorConstants;
+namespace EEC = EndEffectorConstants;
 namespace PC = PivotConstants;
 namespace WC = WristConstants;
 
@@ -110,6 +112,8 @@ PhysicsWorld::PhysicsWorld() {
              Rad(WC::kBootAngleDeg),
              0,
              0};
+  m_endEffector = {EEC::Sim::kRollerInertia, EEC::kGearRatio, 0.0};
+  m_hasCoral = EEC::Sim::kPreload;
 }
 
 void PhysicsWorld::AttachMotor(Mechanism mechanism, ctre::phoenix6::hardware::TalonFX& device,
@@ -188,6 +192,7 @@ void PhysicsWorld::Step(double loopSeconds) {
       }
     }
     StepMechanisms(kDt, bus);
+    StepCoral(kDt);
     // Signed: regeneration (a mechanism being lowered) charges the battery.
     double current = 0;
     for (const auto& m : m_motors) {
@@ -259,6 +264,40 @@ void PhysicsWorld::StepMechanisms(double dt, double bus) {
 
   m_wrist.SetPitchOffset(pivotAngle);
   step(Mechanism::kWrist, m_wrist);
+
+  // A held coral is a little extra load on the roller.
+  m_endEffector.loadTorque = m_hasCoral ? 0.05 : 0.0;
+  step(Mechanism::kEndEffector, m_endEffector);
+}
+
+void PhysicsWorld::StepCoral(double dt) {
+  // Roller speed in rotations per second; positive pulls coral in.
+  const double rollerRps = m_endEffector.Velocity() / (2 * std::numbers::pi);
+  const bool atStation =
+      std::abs(Deg(m_pivot.Angle()) - EEC::Sim::kIntakePivotDeg) < EEC::Sim::kIntakeToleranceDeg &&
+      std::abs(Deg(m_wrist.Angle()) - EEC::Sim::kIntakeWristDeg) < EEC::Sim::kIntakeToleranceDeg &&
+      m_elevator.Position() < EEC::Sim::kIntakeMaxElevatorMeters;
+
+  if (!m_hasCoral && atStation && rollerRps > EEC::Sim::kMoveSpeedRps) {
+    // The station feeds a coral; it takes a moment of rolling to pull it in.
+    m_coralTransfer += dt;
+    if (m_coralTransfer >= EEC::Sim::kTransferSeconds) {
+      m_hasCoral = true;
+      m_coralTransfer = 0;
+      m_metrics.intaked++;
+    }
+  } else if (m_hasCoral && rollerRps < -EEC::Sim::kMoveSpeedRps) {
+    // Rolling outward pushes the coral out (onto the reef at a scoring height).
+    m_coralTransfer -= dt;
+    if (m_coralTransfer <= -EEC::Sim::kTransferSeconds) {
+      m_hasCoral = false;
+      m_coralTransfer = 0;
+      m_metrics.scoredOwnHub++;
+      m_metrics.scoredHeights.push_back(m_elevator.Position());
+    }
+  } else {
+    m_coralTransfer = 0;
+  }
 }
 
 void PhysicsWorld::Publish() {
@@ -272,6 +311,10 @@ void PhysicsWorld::Publish() {
   Log::Record("Sim/BatteryVolts", m_battery.BusVoltage());
   Log::Record("Sim/TotalCurrentAmps", m_battery.TotalCurrent());
   Log::Record("Sim/BrownedOut", m_brownedOut);
+  Log::Record("Sim/HasCoral", m_hasCoral);
+  Log::Record("Sim/CoralIntaked", static_cast<double>(m_metrics.intaked));
+  Log::Record("Sim/CoralScored", static_cast<double>(m_metrics.scoredOwnHub));
+  Log::Record("Sim/EndEffectorRps", m_endEffector.Velocity() / (2 * std::numbers::pi));
 }
 
 }  // namespace sim

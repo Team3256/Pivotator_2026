@@ -9,6 +9,7 @@
 #include "commands/MayhemAutos.h"
 #include "subsystems/Superstructure.h"
 #include "subsystems/elevator/Elevator.h"
+#include "subsystems/endeffector/EndEffector.h"
 #include "subsystems/pivot/Pivot.h"
 #include "subsystems/wrist/Wrist.h"
 
@@ -28,6 +29,7 @@ class RobotContainer {
   Elevator& GetElevator() { return m_elevator; }
   Pivot& GetPivot() { return m_pivot; }
   Wrist& GetWrist() { return m_wrist; }
+  EndEffector& GetEndEffector() { return m_endEffector; }
 
  private:
   void ConfigureBindings();
@@ -38,6 +40,7 @@ class RobotContainer {
   Elevator m_elevator;
   Pivot m_pivot;
   Wrist m_wrist;
+  EndEffector m_endEffector;
   Superstructure m_superstructure;
   MayhemAutos m_autos;
 };

@@ -1,7 +1,7 @@
 {
   "format": "mayhem-suite",
   "version": 1,
-  "revision": 2,
+  "revision": 4,
   "id": "pivotator-2026",
   "name": "Pivotator 2026",
   "field": {
@@ -33,7 +33,7 @@
       "id": "score-l4-in-place",
       "name": "Score L4 in place",
       "initial": "raise",
-      "description": "No drivetrain yet: raise to L4 where the robot stands, then stow.",
+      "description": "No drivetrain yet: raise to L4 where the robot stands, score the preloaded coral, stow.",
       "nodes": [
         {
           "id": "raise",
@@ -42,6 +42,14 @@
           "action": "superstructure.scoreL4",
           "timeout": 5,
           "description": "Superstructure goal L4; done when Motion reaches AT_GOAL."
+        },
+        {
+          "id": "score",
+          "name": "Score coral",
+          "kind": "action",
+          "action": "superstructure.score",
+          "timeout": 3,
+          "description": "Rollers push the preloaded coral onto the reef; done when the sensor clears."
         },
         {
           "id": "stow",
@@ -62,6 +70,14 @@
         {
           "id": "at-l4",
           "from": "raise",
+          "to": "score",
+          "condition": {
+            "kind": "always"
+          }
+        },
+        {
+          "id": "scored",
+          "from": "score",
           "to": "stow",
           "condition": {
             "kind": "always"
@@ -187,6 +203,21 @@
             "initial": false,
             "category": "internal",
             "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/enabled"
+          },
+          {
+            "key": "scored",
+            "name": "Coral just scored",
+            "type": "boolean",
+            "initial": false,
+            "category": "internal",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/scored",
+            "derivedFrom": [
+              {
+                "machine": "EndEffector",
+                "key": "hasCoral"
+              }
+            ]
           }
         ],
         "transitions": [
@@ -207,12 +238,23 @@
             "from": "*",
             "to": "STOW",
             "condition": {
-              "kind": "signal",
-              "key": "stowPressed",
-              "op": "eq",
-              "value": true
+              "kind": "any",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "stowPressed",
+                  "op": "eq",
+                  "value": true
+                },
+                {
+                  "kind": "signal",
+                  "key": "scored",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
             },
-            "name": "A"
+            "name": "A, or coral scored"
           },
           {
             "id": "any-to-CORAL_INTAKE",
@@ -418,6 +460,341 @@
               "kind": "always"
             },
             "name": "At goal"
+          }
+        ]
+      },
+      {
+        "format": "mayhem-machine",
+        "version": 1,
+        "id": "EndEffector",
+        "name": "End effector",
+        "description": "The coral in the end effector. At the coral intake the rollers pull a coral in; RT at a reef level scores it; LT (held) spits it out anywhere.",
+        "initial": "EMPTY",
+        "states": [
+          {
+            "id": "EMPTY",
+            "name": "Empty",
+            "description": "No coral; rollers off.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "INTAKING",
+            "name": "Intaking",
+            "description": "At the coral intake: rollers pull in until the sensor sees a coral.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "HOLDING",
+            "name": "Holding",
+            "description": "Coral in; a small inward push keeps it there.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "SCORING",
+            "name": "Scoring",
+            "description": "Rollers push the coral out onto the reef.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "EJECTING",
+            "name": "Ejecting",
+            "description": "LT held: rollers spit out whatever is in there.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          }
+        ],
+        "inputs": [
+          {
+            "key": "scorePressed",
+            "name": "RT pressed (score)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/scorePressed"
+          },
+          {
+            "key": "ejectHeld",
+            "name": "LT held (eject)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/ejectHeld"
+          },
+          {
+            "key": "enabled",
+            "name": "Robot enabled",
+            "type": "boolean",
+            "initial": false,
+            "category": "internal",
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/enabled"
+          },
+          {
+            "key": "atIntake",
+            "name": "At the coral intake pose",
+            "type": "boolean",
+            "initial": false,
+            "category": "internal",
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/atIntake",
+            "derivedFrom": [
+              {
+                "machine": "Superstructure",
+                "key": "intakePressed"
+              }
+            ]
+          },
+          {
+            "key": "atReefLevel",
+            "name": "At a reef level (L1-L4)",
+            "type": "boolean",
+            "initial": false,
+            "category": "internal",
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/atReefLevel",
+            "derivedFrom": [
+              {
+                "machine": "Superstructure",
+                "key": "l4Pressed"
+              }
+            ]
+          },
+          {
+            "key": "hasCoral",
+            "name": "CANrange sees a coral",
+            "type": "boolean",
+            "initial": false,
+            "category": "sensor",
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/hasCoral"
+          },
+          {
+            "key": "stateTime",
+            "name": "Seconds in this state",
+            "type": "number",
+            "initial": 0,
+            "unit": "s",
+            "category": "timer",
+            "channel": "/RealOutputs/Mayhem/States/EndEffector/inputs/stateTime"
+          }
+        ],
+        "transitions": [
+          {
+            "id": "any-to-HOLDING",
+            "from": "*",
+            "to": "HOLDING",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "enabled",
+                  "op": "eq",
+                  "value": false
+                },
+                {
+                  "kind": "signal",
+                  "key": "hasCoral",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "name": "Disabled with a coral"
+          },
+          {
+            "id": "any-to-EMPTY",
+            "from": "*",
+            "to": "EMPTY",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "enabled",
+                  "op": "eq",
+                  "value": false
+                },
+                {
+                  "kind": "signal",
+                  "key": "hasCoral",
+                  "op": "eq",
+                  "value": false
+                }
+              ]
+            },
+            "name": "Disabled"
+          },
+          {
+            "id": "any-to-EJECTING",
+            "from": "*",
+            "to": "EJECTING",
+            "condition": {
+              "kind": "signal",
+              "key": "ejectHeld",
+              "op": "eq",
+              "value": true
+            },
+            "name": "LT held"
+          },
+          {
+            "id": "EJECTING-to-HOLDING",
+            "from": "EJECTING",
+            "to": "HOLDING",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "ejectHeld",
+                  "op": "eq",
+                  "value": false
+                },
+                {
+                  "kind": "signal",
+                  "key": "hasCoral",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "name": "LT released, coral still in"
+          },
+          {
+            "id": "EJECTING-to-EMPTY",
+            "from": "EJECTING",
+            "to": "EMPTY",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "ejectHeld",
+                  "op": "eq",
+                  "value": false
+                },
+                {
+                  "kind": "signal",
+                  "key": "hasCoral",
+                  "op": "eq",
+                  "value": false
+                }
+              ]
+            },
+            "name": "LT released"
+          },
+          {
+            "id": "EMPTY-to-HOLDING",
+            "from": "EMPTY",
+            "to": "HOLDING",
+            "condition": {
+              "kind": "signal",
+              "key": "hasCoral",
+              "op": "eq",
+              "value": true
+            },
+            "name": "Coral seen (preload)"
+          },
+          {
+            "id": "EMPTY-to-INTAKING",
+            "from": "EMPTY",
+            "to": "INTAKING",
+            "condition": {
+              "kind": "signal",
+              "key": "atIntake",
+              "op": "eq",
+              "value": true
+            },
+            "name": "At the coral intake"
+          },
+          {
+            "id": "INTAKING-to-HOLDING",
+            "from": "INTAKING",
+            "to": "HOLDING",
+            "condition": {
+              "kind": "signal",
+              "key": "hasCoral",
+              "op": "eq",
+              "value": true
+            },
+            "name": "Got a coral"
+          },
+          {
+            "id": "INTAKING-to-EMPTY",
+            "from": "INTAKING",
+            "to": "EMPTY",
+            "condition": {
+              "kind": "signal",
+              "key": "atIntake",
+              "op": "eq",
+              "value": false
+            },
+            "name": "Left the intake"
+          },
+          {
+            "id": "HOLDING-to-SCORING",
+            "from": "HOLDING",
+            "to": "SCORING",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "scorePressed",
+                  "op": "eq",
+                  "value": true
+                },
+                {
+                  "kind": "signal",
+                  "key": "atReefLevel",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
+            },
+            "name": "RT at a reef level"
+          },
+          {
+            "id": "HOLDING-to-EMPTY",
+            "from": "HOLDING",
+            "to": "EMPTY",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "hasCoral",
+                  "op": "eq",
+                  "value": false
+                },
+                {
+                  "kind": "signal",
+                  "key": "stateTime",
+                  "op": "gt",
+                  "value": 0.5
+                }
+              ]
+            },
+            "name": "Coral lost"
+          },
+          {
+            "id": "SCORING-to-EMPTY",
+            "from": "SCORING",
+            "to": "EMPTY",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "hasCoral",
+                  "op": "eq",
+                  "value": false
+                },
+                {
+                  "kind": "signal",
+                  "key": "stateTime",
+                  "op": "gt",
+                  "value": 0.25
+                }
+              ]
+            },
+            "name": "Coral out"
           }
         ]
       }

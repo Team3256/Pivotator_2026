@@ -19,14 +19,17 @@ inline constexpr std::string_view name = "Score L4 in place";
 inline constexpr mayhem::Pose startPose{2,4,0};
 inline bool guard_0([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
 inline bool guard_1([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
-inline constexpr std::array<mayhem::AutoNode,3> nodes = {{
+inline bool guard_2([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
+inline constexpr std::array<mayhem::AutoNode,4> nodes = {{
   {"raise",mayhem::NodeKind::Action,{},5,"superstructure.scoreL4",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"score",mayhem::NodeKind::Action,{},3,"superstructure.score",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
   {"stow",mayhem::NodeKind::Action,{},5,"superstructure.stow",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
   {"done",mayhem::NodeKind::Finish,{},1,"",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
 }};
-inline constexpr std::array<mayhem::AutoTransition,2> transitions = {{
-  {"at-l4","raise","stow",guard_0},
-  {"stowed","stow","done",guard_1},
+inline constexpr std::array<mayhem::AutoTransition,3> transitions = {{
+  {"at-l4","raise","score",guard_0},
+  {"scored","score","stow",guard_1},
+  {"stowed","stow","done",guard_2},
 }};
 // Signal keys the guards read (AutoRunner::BindSignal / Unbound).
 inline constexpr std::array<std::string_view,0> signalKeys = {};
@@ -44,14 +47,14 @@ inline constexpr std::array<mayhem::RoutineInfo,1> routines = {{
 // All routines as one "Autonomous" mayhem-machine manifest; transition IDs are "<routine>/<transition>".
 namespace autonomous {
 inline constexpr std::array<std::string_view,1> manifestParts = {{
-  "{\"format\":\"mayhem-machine\",\"id\":\"Autonomous\",\"initial\":\"raise\",\"inputs\":[],\"name\":\"Autonomous\",\"states\":[{\"description\":\"Superstructure goal L4; done when Motion reaches AT_GOAL.\",\"id\":\"raise\",\"name\":\"Raise to L4\"},{\"description\":\"Superstructure goal STOW; done when Motion reaches AT_GOAL.\",\"id\":\"stow\",\"name\":\"Stow\"},{\"id\":\"done\",\"name\":\"Auto complete\"}],\"transitions\":[{\"condition\":{\"kind\":\"always\"},\"from\":\"raise\",\"id\":\"score-l4-in-place/at-l4\",\"to\":\"stow\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"stow\",\"id\":\"score-l4-in-place/stowed\",\"to\":\"done\"}],\"version\":1}",
+  "{\"format\":\"mayhem-machine\",\"id\":\"Autonomous\",\"initial\":\"raise\",\"inputs\":[],\"name\":\"Autonomous\",\"states\":[{\"description\":\"Superstructure goal L4; done when Motion reaches AT_GOAL.\",\"id\":\"raise\",\"name\":\"Raise to L4\"},{\"description\":\"Rollers push the preloaded coral onto the reef; done when the sensor clears.\",\"id\":\"score\",\"name\":\"Score coral\"},{\"description\":\"Superstructure goal STOW; done when Motion reaches AT_GOAL.\",\"id\":\"stow\",\"name\":\"Stow\"},{\"id\":\"done\",\"name\":\"Auto complete\"}],\"transitions\":[{\"condition\":{\"kind\":\"always\"},\"from\":\"raise\",\"id\":\"score-l4-in-place/at-l4\",\"to\":\"score\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"score\",\"id\":\"score-l4-in-place/scored\",\"to\":\"stow\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"stow\",\"id\":\"score-l4-in-place/stowed\",\"to\":\"done\"}],\"version\":1}",
 }};
 inline constexpr mayhem::ManifestView manifest{manifestParts.data(),manifestParts.size()};
 }
 namespace machine_0 {
 inline constexpr std::string_view id = "Superstructure";
 inline bool guard_0([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("enabled"), mayhem::CompareOp::Eq, mayhem::SignalValue{false})).value_or(false); }
-inline bool guard_1([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("stowPressed"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
+inline bool guard_1([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Any({mayhem::Compare(h.Signal("stowPressed"), mayhem::CompareOp::Eq, mayhem::SignalValue{true}), mayhem::Compare(h.Signal("scored"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})})).value_or(false); }
 inline bool guard_2([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("intakePressed"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
 inline bool guard_3([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("l1Pressed"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
 inline bool guard_4([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("l2Pressed"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
@@ -75,7 +78,7 @@ inline constexpr std::array<mayhem::MachineTransition,7> transitions = {{
   {"any-to-L4","*","L4",guard_6},
 }};
 // Declared inputs: key, log channel (empty: Mayhem/States/<id>/inputs/<key>), type, one-shot event, initial value.
-inline constexpr std::array<mayhem::MachineInput,7> inputs = {{
+inline constexpr std::array<mayhem::MachineInput,8> inputs = {{
   {"stowPressed","/RealOutputs/Mayhem/States/Superstructure/inputs/stowPressed",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
   {"intakePressed","/RealOutputs/Mayhem/States/Superstructure/inputs/intakePressed",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
   {"l1Pressed","/RealOutputs/Mayhem/States/Superstructure/inputs/l1Pressed",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
@@ -83,10 +86,11 @@ inline constexpr std::array<mayhem::MachineInput,7> inputs = {{
   {"l3Pressed","/RealOutputs/Mayhem/States/Superstructure/inputs/l3Pressed",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
   {"l4Pressed","/RealOutputs/Mayhem/States/Superstructure/inputs/l4Pressed",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
   {"enabled","/RealOutputs/Mayhem/States/Superstructure/inputs/enabled",mayhem::InputType::Boolean,false,mayhem::SignalValue{false}},
+  {"scored","/RealOutputs/Mayhem/States/Superstructure/inputs/scored",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
 }};
 inline constexpr std::array<std::string_view,2> manifestParts = {{
-  "{\"description\":\"Where the driver wants the end effector: stowed, at the coral intake, or at a reef level. Each button picks a goal; Motion gets the pivot, elevator and wrist there safely.\",\"format\":\"mayhem-machine\",\"id\":\"Superstructure\",\"initial\":\"STOW\",\"inputs\":[{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/stowPressed\",\"event\":true,\"initial\":false,\"key\":\"stowPressed\",\"name\":\"A pressed (stow)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/intakePressed\",\"event\":true,\"initial\":false,\"key\":\"intakePressed\",\"name\":\"RB pressed (coral intake)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l1Pressed\",\"event\":true,\"initial\":false,\"key\":\"l1Pressed\",\"name\":\"LB pressed (L1)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l2Pressed\",\"event\":true,\"initial\":false,\"key\":\"l2Pressed\",\"name\":\"B pressed (L2)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l3Pressed\",\"event\":true,\"initial\":false,\"key\":\"l3Pressed\",\"name\":\"X pressed (L3)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l4Pressed\",\"event\":true,\"initial\":false,\"key\":\"l4Pressed\",\"name\":\"Y pressed (L4)\",\"type\":\"boolean\"},{\"category\":\"internal\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/enabled\",\"initial\":false,\"key\":\"enabled\",\"name\":\"Robot enabled\",\"type\":\"boolean\"}],\"name\":\"Superstructure goal\",\"states\":[{\"description\":\"Elevator down, pivot upright, wrist in line.\",\"id\":\"STOW\",\"name\":\"Stow\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Pivot tipped forward, wrist down to take coral.\",\"id\":\"CORAL_INTAKE\",\"name\":\"Coral intake\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Trough.\",\"id\":\"L1\",\"name\":\"L1\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},",
-  "{\"description\":\"Reef level 2.\",\"id\":\"L2\",\"name\":\"L2\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Reef level 3.\",\"id\":\"L3\",\"name\":\"L3\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Reef level 4: elevator near full extension.\",\"id\":\"L4\",\"name\":\"L4\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"}],\"transitions\":[{\"condition\":{\"key\":\"enabled\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},\"from\":\"*\",\"id\":\"any-to-STOW\",\"name\":\"Disabled\",\"to\":\"STOW\"},{\"condition\":{\"key\":\"stowPressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-STOW-2\",\"name\":\"A\",\"to\":\"STOW\"},{\"condition\":{\"key\":\"intakePressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-CORAL_INTAKE\",\"name\":\"RB\",\"to\":\"CORAL_INTAKE\"},{\"condition\":{\"key\":\"l1Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L1\",\"name\":\"LB\",\"to\":\"L1\"},{\"condition\":{\"key\":\"l2Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L2\",\"name\":\"B\",\"to\":\"L2\"},{\"condition\":{\"key\":\"l3Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L3\",\"name\":\"X\",\"to\":\"L3\"},{\"condition\":{\"key\":\"l4Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L4\",\"name\":\"Y\",\"to\":\"L4\"}],\"version\":1}",
+  "{\"description\":\"Where the driver wants the end effector: stowed, at the coral intake, or at a reef level. Each button picks a goal; Motion gets the pivot, elevator and wrist there safely.\",\"format\":\"mayhem-machine\",\"id\":\"Superstructure\",\"initial\":\"STOW\",\"inputs\":[{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/stowPressed\",\"event\":true,\"initial\":false,\"key\":\"stowPressed\",\"name\":\"A pressed (stow)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/intakePressed\",\"event\":true,\"initial\":false,\"key\":\"intakePressed\",\"name\":\"RB pressed (coral intake)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l1Pressed\",\"event\":true,\"initial\":false,\"key\":\"l1Pressed\",\"name\":\"LB pressed (L1)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l2Pressed\",\"event\":true,\"initial\":false,\"key\":\"l2Pressed\",\"name\":\"B pressed (L2)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l3Pressed\",\"event\":true,\"initial\":false,\"key\":\"l3Pressed\",\"name\":\"X pressed (L3)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/l4Pressed\",\"event\":true,\"initial\":false,\"key\":\"l4Pressed\",\"name\":\"Y pressed (L4)\",\"type\":\"boolean\"},{\"category\":\"internal\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/enabled\",\"initial\":false,\"key\":\"enabled\",\"name\":\"Robot enabled\",\"type\":\"boolean\"},{\"category\":\"internal\",\"channel\":\"/RealOutputs/Mayhem/States/Superstructure/inputs/scored\",\"derivedFrom\":[{\"key\":\"hasCoral\",\"machine\":\"EndEffector\"}],\"event\":true,\"initial\":false,\"key\":\"scored\",\"name\":\"Coral just scored\",\"type\":\"boolean\"}],\"name\":\"Superstructure goal\",\"states\":[{\"description\":\"Elevator down, pivot upright, wrist in line.\",\"id\":\"STOW\",\"name\":\"Stow\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Pivot tip",
+  "ped forward, wrist down to take coral.\",\"id\":\"CORAL_INTAKE\",\"name\":\"Coral intake\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Trough.\",\"id\":\"L1\",\"name\":\"L1\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Reef level 2.\",\"id\":\"L2\",\"name\":\"L2\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Reef level 3.\",\"id\":\"L3\",\"name\":\"L3\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Reef level 4: elevator near full extension.\",\"id\":\"L4\",\"name\":\"L4\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"}],\"transitions\":[{\"condition\":{\"key\":\"enabled\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},\"from\":\"*\",\"id\":\"any-to-STOW\",\"name\":\"Disabled\",\"to\":\"STOW\"},{\"condition\":{\"conditions\":[{\"key\":\"stowPressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},{\"key\":\"scored\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true}],\"kind\":\"any\"},\"from\":\"*\",\"id\":\"any-to-STOW-2\",\"name\":\"A, or coral scored\",\"to\":\"STOW\"},{\"condition\":{\"key\":\"intakePressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-CORAL_INTAKE\",\"name\":\"RB\",\"to\":\"CORAL_INTAKE\"},{\"condition\":{\"key\":\"l1Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L1\",\"name\":\"LB\",\"to\":\"L1\"},{\"condition\":{\"key\":\"l2Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L2\",\"name\":\"B\",\"to\":\"L2\"},{\"condition\":{\"key\":\"l3Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L3\",\"name\":\"X\",\"to\":\"L3\"},{\"condition\":{\"key\":\"l4Pressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-L4\",\"name\":\"Y\",\"to\":\"L4\"}],\"version\":1}",
 }};
 inline constexpr mayhem::ManifestView manifest{manifestParts.data(),manifestParts.size()};
 inline constexpr mayhem::MachineView machine{id,"STOW",states.data(),states.size(),transitions.data(),transitions.size(),manifest,false,inputs.data(),inputs.size()};
@@ -100,6 +104,7 @@ struct Inputs {
   bool l3Pressed = false; // X pressed (L3) · operator · event: reset after the first step of each loop
   bool l4Pressed = false; // Y pressed (L4) · operator · event: reset after the first step of each loop
   bool enabled = false; // Robot enabled · internal
+  bool scored = false; // Coral just scored · internal · event: reset after the first step of each loop
 };
 struct Def {
   using State = mayhem_generated::machine_0::State; using Inputs = mayhem_generated::machine_0::Inputs;
@@ -107,7 +112,7 @@ struct Def {
   static bool Guard([[maybe_unused]] const Inputs& in, std::size_t transition, [[maybe_unused]] double stateTime) {
     switch (transition) {
       case 0: return (mayhem::CompareTyped(in.enabled, mayhem::CompareOp::Eq, false)).value_or(false);
-      case 1: return (mayhem::CompareTyped(in.stowPressed, mayhem::CompareOp::Eq, true)).value_or(false);
+      case 1: return (mayhem::Any({mayhem::CompareTyped(in.stowPressed, mayhem::CompareOp::Eq, true), mayhem::CompareTyped(in.scored, mayhem::CompareOp::Eq, true)})).value_or(false);
       case 2: return (mayhem::CompareTyped(in.intakePressed, mayhem::CompareOp::Eq, true)).value_or(false);
       case 3: return (mayhem::CompareTyped(in.l1Pressed, mayhem::CompareOp::Eq, true)).value_or(false);
       case 4: return (mayhem::CompareTyped(in.l2Pressed, mayhem::CompareOp::Eq, true)).value_or(false);
@@ -124,6 +129,7 @@ struct Def {
     if (key == "l3Pressed") return mayhem::SignalValue{in.l3Pressed};
     if (key == "l4Pressed") return mayhem::SignalValue{in.l4Pressed};
     if (key == "enabled") return mayhem::SignalValue{in.enabled};
+    if (key == "scored") return mayhem::SignalValue{in.scored};
     return {};
   }
   static void ClearEvents([[maybe_unused]] Inputs& in) {
@@ -133,6 +139,7 @@ struct Def {
     in.l2Pressed = false;
     in.l3Pressed = false;
     in.l4Pressed = false;
+    in.scored = false;
   }
 };
 using Machine = mayhem::TypedMachine<Def>;
@@ -206,9 +213,108 @@ struct Def {
 using Machine = mayhem::TypedMachine<Def>;
 }
 namespace Motion = machine_1;
+namespace machine_2 {
+inline constexpr std::string_view id = "EndEffector";
+inline bool guard_0([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("enabled"), mayhem::CompareOp::Eq, mayhem::SignalValue{false}), mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})})).value_or(false); }
+inline bool guard_1([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("enabled"), mayhem::CompareOp::Eq, mayhem::SignalValue{false}), mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{false})})).value_or(false); }
+inline bool guard_2([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("ejectHeld"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
+inline bool guard_3([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("ejectHeld"), mayhem::CompareOp::Eq, mayhem::SignalValue{false}), mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})})).value_or(false); }
+inline bool guard_4([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("ejectHeld"), mayhem::CompareOp::Eq, mayhem::SignalValue{false}), mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{false})})).value_or(false); }
+inline bool guard_5([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
+inline bool guard_6([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("atIntake"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
+inline bool guard_7([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})).value_or(false); }
+inline bool guard_8([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::Compare(h.Signal("atIntake"), mayhem::CompareOp::Eq, mayhem::SignalValue{false})).value_or(false); }
+inline bool guard_9([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("scorePressed"), mayhem::CompareOp::Eq, mayhem::SignalValue{true}), mayhem::Compare(h.Signal("atReefLevel"), mayhem::CompareOp::Eq, mayhem::SignalValue{true})})).value_or(false); }
+inline bool guard_10([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{false}), mayhem::Compare(h.Signal("stateTime"), mayhem::CompareOp::Gt, mayhem::SignalValue{double{0.5}})})).value_or(false); }
+inline bool guard_11([[maybe_unused]] const mayhem::SignalSource& h) { return (mayhem::All({mayhem::Compare(h.Signal("hasCoral"), mayhem::CompareOp::Eq, mayhem::SignalValue{false}), mayhem::Compare(h.Signal("stateTime"), mayhem::CompareOp::Gt, mayhem::SignalValue{double{0.25}})})).value_or(false); }
+inline constexpr std::array<mayhem::MachineState,5> states = {{
+  {"EMPTY"},
+  {"INTAKING"},
+  {"HOLDING"},
+  {"SCORING"},
+  {"EJECTING"},
+}};
+inline constexpr std::array<mayhem::MachineTransition,12> transitions = {{
+  {"any-to-HOLDING","*","HOLDING",guard_0},
+  {"any-to-EMPTY","*","EMPTY",guard_1},
+  {"any-to-EJECTING","*","EJECTING",guard_2},
+  {"EJECTING-to-HOLDING","EJECTING","HOLDING",guard_3},
+  {"EJECTING-to-EMPTY","EJECTING","EMPTY",guard_4},
+  {"EMPTY-to-HOLDING","EMPTY","HOLDING",guard_5},
+  {"EMPTY-to-INTAKING","EMPTY","INTAKING",guard_6},
+  {"INTAKING-to-HOLDING","INTAKING","HOLDING",guard_7},
+  {"INTAKING-to-EMPTY","INTAKING","EMPTY",guard_8},
+  {"HOLDING-to-SCORING","HOLDING","SCORING",guard_9},
+  {"HOLDING-to-EMPTY","HOLDING","EMPTY",guard_10},
+  {"SCORING-to-EMPTY","SCORING","EMPTY",guard_11},
+}};
+// Declared inputs: key, log channel (empty: Mayhem/States/<id>/inputs/<key>), type, one-shot event, initial value.
+inline constexpr std::array<mayhem::MachineInput,7> inputs = {{
+  {"scorePressed","/RealOutputs/Mayhem/States/EndEffector/inputs/scorePressed",mayhem::InputType::Boolean,true,mayhem::SignalValue{false}},
+  {"ejectHeld","/RealOutputs/Mayhem/States/EndEffector/inputs/ejectHeld",mayhem::InputType::Boolean,false,mayhem::SignalValue{false}},
+  {"enabled","/RealOutputs/Mayhem/States/EndEffector/inputs/enabled",mayhem::InputType::Boolean,false,mayhem::SignalValue{false}},
+  {"atIntake","/RealOutputs/Mayhem/States/EndEffector/inputs/atIntake",mayhem::InputType::Boolean,false,mayhem::SignalValue{false}},
+  {"atReefLevel","/RealOutputs/Mayhem/States/EndEffector/inputs/atReefLevel",mayhem::InputType::Boolean,false,mayhem::SignalValue{false}},
+  {"hasCoral","/RealOutputs/Mayhem/States/EndEffector/inputs/hasCoral",mayhem::InputType::Boolean,false,mayhem::SignalValue{false}},
+  {"stateTime","/RealOutputs/Mayhem/States/EndEffector/inputs/stateTime",mayhem::InputType::Number,false,mayhem::SignalValue{double{0}}},
+}};
+inline constexpr std::array<std::string_view,3> manifestParts = {{
+  "{\"description\":\"The coral in the end effector. At the coral intake the rollers pull a coral in; RT at a reef level scores it; LT (held) spits it out anywhere.\",\"format\":\"mayhem-machine\",\"id\":\"EndEffector\",\"initial\":\"EMPTY\",\"inputs\":[{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/scorePressed\",\"event\":true,\"initial\":false,\"key\":\"scorePressed\",\"name\":\"RT pressed (score)\",\"type\":\"boolean\"},{\"category\":\"operator\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/ejectHeld\",\"initial\":false,\"key\":\"ejectHeld\",\"name\":\"LT held (eject)\",\"type\":\"boolean\"},{\"category\":\"internal\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/enabled\",\"initial\":false,\"key\":\"enabled\",\"name\":\"Robot enabled\",\"type\":\"boolean\"},{\"category\":\"internal\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/atIntake\",\"derivedFrom\":[{\"key\":\"intakePressed\",\"machine\":\"Superstructure\"}],\"initial\":false,\"key\":\"atIntake\",\"name\":\"At the coral intake pose\",\"type\":\"boolean\"},{\"category\":\"internal\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/atReefLevel\",\"derivedFrom\":[{\"key\":\"l4Pressed\",\"machine\":\"Superstructure\"}],\"initial\":false,\"key\":\"atReefLevel\",\"name\":\"At a reef level (L1-L4)\",\"type\":\"boolean\"},{\"category\":\"sensor\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/hasCoral\",\"initial\":false,\"key\":\"hasCoral\",\"name\":\"CANrange sees a coral\",\"type\":\"boolean\"},{\"category\":\"timer\",\"channel\":\"/RealOutputs/Mayhem/States/EndEffector/inputs/stateTime\",\"initial\":0,\"key\":\"stateTime\",\"name\":\"Seconds in this state\",\"type\":\"number\",\"unit\":\"s\"}],\"name\":\"End effector\",\"states\":[{\"description\":\"No coral; rollers off.\",\"id\":\"EMPTY\",\"name\":\"Empty\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"At the coral intake: rollers pull in until the sensor sees a coral.\",\"id\":\"INTAKING\",\"name\":\"Intaking\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Coral in; a small inward push keeps it there.\",\"id\":\"HOLDING\",\"name\":",
+  "\"Holding\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"Rollers push the coral out onto the reef.\",\"id\":\"SCORING\",\"name\":\"Scoring\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"},{\"description\":\"LT held: rollers spit out whatever is in there.\",\"id\":\"EJECTING\",\"name\":\"Ejecting\",\"source\":\"src/main/cpp/subsystems/Superstructure.cpp\"}],\"transitions\":[{\"condition\":{\"conditions\":[{\"key\":\"enabled\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true}],\"kind\":\"all\"},\"from\":\"*\",\"id\":\"any-to-HOLDING\",\"name\":\"Disabled with a coral\",\"to\":\"HOLDING\"},{\"condition\":{\"conditions\":[{\"key\":\"enabled\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false}],\"kind\":\"all\"},\"from\":\"*\",\"id\":\"any-to-EMPTY\",\"name\":\"Disabled\",\"to\":\"EMPTY\"},{\"condition\":{\"key\":\"ejectHeld\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"*\",\"id\":\"any-to-EJECTING\",\"name\":\"LT held\",\"to\":\"EJECTING\"},{\"condition\":{\"conditions\":[{\"key\":\"ejectHeld\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true}],\"kind\":\"all\"},\"from\":\"EJECTING\",\"id\":\"EJECTING-to-HOLDING\",\"name\":\"LT released, coral still in\",\"to\":\"HOLDING\"},{\"condition\":{\"conditions\":[{\"key\":\"ejectHeld\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false}],\"kind\":\"all\"},\"from\":\"EJECTING\",\"id\":\"EJECTING-to-EMPTY\",\"name\":\"LT released\",\"to\":\"EMPTY\"},{\"condition\":{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"EMPTY\",\"id\":\"EMPTY-to-HOLDING\",\"name\":\"Coral seen (preload)\",\"to\":\"HOLDING\"},{\"condition\":{\"key\":\"atIntake\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"EMPTY\",\"id\":\"EMPTY-to-INTAKING\",\"name\":\"At the coral intake\",\"to\":\"INTAKING\"},{\"condition\":{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},\"from\":\"INTAKING\",\"id\":\"INTAKING-to-HOLDING\",\"name\":\"Got a coral\",\"to\":\"HOLDING\"},{\"condition\":{\"key\":\"atIntake\",\"kind\":\"signal\",\"op\":",
+  "\"eq\",\"value\":false},\"from\":\"INTAKING\",\"id\":\"INTAKING-to-EMPTY\",\"name\":\"Left the intake\",\"to\":\"EMPTY\"},{\"condition\":{\"conditions\":[{\"key\":\"scorePressed\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true},{\"key\":\"atReefLevel\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":true}],\"kind\":\"all\"},\"from\":\"HOLDING\",\"id\":\"HOLDING-to-SCORING\",\"name\":\"RT at a reef level\",\"to\":\"SCORING\"},{\"condition\":{\"conditions\":[{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},{\"key\":\"stateTime\",\"kind\":\"signal\",\"op\":\"gt\",\"value\":0.5}],\"kind\":\"all\"},\"from\":\"HOLDING\",\"id\":\"HOLDING-to-EMPTY\",\"name\":\"Coral lost\",\"to\":\"EMPTY\"},{\"condition\":{\"conditions\":[{\"key\":\"hasCoral\",\"kind\":\"signal\",\"op\":\"eq\",\"value\":false},{\"key\":\"stateTime\",\"kind\":\"signal\",\"op\":\"gt\",\"value\":0.25}],\"kind\":\"all\"},\"from\":\"SCORING\",\"id\":\"SCORING-to-EMPTY\",\"name\":\"Coral out\",\"to\":\"EMPTY\"}],\"version\":1}",
+}};
+inline constexpr mayhem::ManifestView manifest{manifestParts.data(),manifestParts.size()};
+inline constexpr mayhem::MachineView machine{id,"EMPTY",states.data(),states.size(),transitions.data(),transitions.size(),manifest,false,inputs.data(),inputs.size()};
+// Typed API: mayhem::TypedMachine<Def> (alias Machine). A misspelled state or input does not compile.
+enum class State : int { EMPTY, INTAKING, HOLDING, SCORING, EJECTING };
+struct Inputs {
+  bool scorePressed = false; // RT pressed (score) · operator · event: reset after the first step of each loop
+  bool ejectHeld = false; // LT held (eject) · operator
+  bool enabled = false; // Robot enabled · internal
+  bool atIntake = false; // At the coral intake pose · internal
+  bool atReefLevel = false; // At a reef level (L1-L4) · internal
+  bool hasCoral = false; // CANrange sees a coral · sensor
+};
+struct Def {
+  using State = mayhem_generated::machine_2::State; using Inputs = mayhem_generated::machine_2::Inputs;
+  static constexpr const mayhem::MachineView& view = machine;
+  static bool Guard([[maybe_unused]] const Inputs& in, std::size_t transition, [[maybe_unused]] double stateTime) {
+    switch (transition) {
+      case 0: return (mayhem::All({mayhem::CompareTyped(in.enabled, mayhem::CompareOp::Eq, false), mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, true)})).value_or(false);
+      case 1: return (mayhem::All({mayhem::CompareTyped(in.enabled, mayhem::CompareOp::Eq, false), mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, false)})).value_or(false);
+      case 2: return (mayhem::CompareTyped(in.ejectHeld, mayhem::CompareOp::Eq, true)).value_or(false);
+      case 3: return (mayhem::All({mayhem::CompareTyped(in.ejectHeld, mayhem::CompareOp::Eq, false), mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, true)})).value_or(false);
+      case 4: return (mayhem::All({mayhem::CompareTyped(in.ejectHeld, mayhem::CompareOp::Eq, false), mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, false)})).value_or(false);
+      case 5: return (mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, true)).value_or(false);
+      case 6: return (mayhem::CompareTyped(in.atIntake, mayhem::CompareOp::Eq, true)).value_or(false);
+      case 7: return (mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, true)).value_or(false);
+      case 8: return (mayhem::CompareTyped(in.atIntake, mayhem::CompareOp::Eq, false)).value_or(false);
+      case 9: return (mayhem::All({mayhem::CompareTyped(in.scorePressed, mayhem::CompareOp::Eq, true), mayhem::CompareTyped(in.atReefLevel, mayhem::CompareOp::Eq, true)})).value_or(false);
+      case 10: return (mayhem::All({mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, false), mayhem::CompareTyped(stateTime, mayhem::CompareOp::Gt, double{0.5})})).value_or(false);
+      case 11: return (mayhem::All({mayhem::CompareTyped(in.hasCoral, mayhem::CompareOp::Eq, false), mayhem::CompareTyped(stateTime, mayhem::CompareOp::Gt, double{0.25})})).value_or(false);
+      default: return false;
+    }
+  }
+  static mayhem::SignalValue Signal([[maybe_unused]] const Inputs& in, [[maybe_unused]] std::string_view key) {
+    if (key == "scorePressed") return mayhem::SignalValue{in.scorePressed};
+    if (key == "ejectHeld") return mayhem::SignalValue{in.ejectHeld};
+    if (key == "enabled") return mayhem::SignalValue{in.enabled};
+    if (key == "atIntake") return mayhem::SignalValue{in.atIntake};
+    if (key == "atReefLevel") return mayhem::SignalValue{in.atReefLevel};
+    if (key == "hasCoral") return mayhem::SignalValue{in.hasCoral};
+    return {};
+  }
+  static void ClearEvents([[maybe_unused]] Inputs& in) {
+    in.scorePressed = false;
+  }
+};
+using Machine = mayhem::TypedMachine<Def>;
+}
+namespace EndEffector = machine_2;
 // Every extensions.machines graph in project order; run one with mayhem::StateMachine.
-inline constexpr std::array<mayhem::MachineView,2> machines = {{
+inline constexpr std::array<mayhem::MachineView,3> machines = {{
   machine_0::machine,
   machine_1::machine,
+  machine_2::machine,
 }};
 } // namespace mayhem_generated

@@ -18,14 +18,17 @@
 namespace sim {
 
 /** The simulated mechanisms, one physics plant each. */
-enum class Mechanism { kPivot, kElevator, kWrist };
+enum class Mechanism { kPivot, kElevator, kWrist, kEndEffector };
 
 /**
  * What happened during a run, for tests and Mayhem's sim proof (its probe reads these fields).
- * The drivetrain/field/game-piece counters stay 0: this robot has no drivetrain yet.
+ * Coral taken in counts as `intaked`, coral scored as `scoredOwnHub` (the probe's names). The
+ * drivetrain/field counters stay 0: this robot has no drivetrain yet.
  */
 struct Metrics {
   int shotsFired = 0, intaked = 0, scoredOwnHub = 0;
+  /** Elevator height (m) at each coral scored, in order. */
+  std::vector<double> scoredHeights;
   int wallHits = 0, obstacleHits = 0;
   std::vector<std::string> hits;
   double beachedSeconds = 0, minBatteryVolts = 99, maxTotalCurrent = 0;
@@ -73,6 +76,10 @@ class PhysicsWorld {
   double PivotAngleRad();
   double ElevatorMeters();
   double WristAngleRad();
+  /** Whether a coral is in the end effector (what the CANrange would see). */
+  bool HasCoral() const { return m_hasCoral; }
+  /** Puts a coral in the end effector, or takes it out. */
+  void SetHasCoral(bool hasCoral) { m_hasCoral = hasCoral; }
 
   /** The robot's true pose. Parked (no drivetrain yet). */
   frc::Pose2d TruePose() const;
@@ -88,6 +95,8 @@ class PhysicsWorld {
 
   void ReadControls();
   void StepMechanisms(double dt, double bus);
+  /** Coral in and out of the end effector, from the roller's motion and the arm's pose. */
+  void StepCoral(double dt);
   void Publish();
   MotorEntry* Find(const ctre::phoenix6::hardware::TalonFX& device) const;
 
@@ -95,8 +104,12 @@ class PhysicsWorld {
   mayhem::sim::Arm m_pivot;
   mayhem::sim::Elevator m_elevator;
   mayhem::sim::Arm m_wrist;
+  mayhem::sim::Roller m_endEffector;
   mayhem::sim::Battery m_battery;
   Metrics m_metrics;
+  bool m_hasCoral = false;
+  /** Seconds the roller has been moving a coral in (positive) or out (negative). */
+  double m_coralTransfer = 0;
   bool m_brownedOut = false;
   double m_time = 0;
 };

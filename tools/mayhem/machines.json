@@ -35,7 +35,17 @@
           }
         },
         "internal": {
-          "enabled": "Robot enabled"
+          "enabled": "Robot enabled",
+          "scored": {
+            "name": "Coral just scored",
+            "event": true,
+            "derivedFrom": [
+              {
+                "machine": "EndEffector",
+                "key": "hasCoral"
+              }
+            ]
+          }
         }
       },
       "states": {
@@ -66,7 +76,7 @@
       },
       "transitions": [
         "* -> STOW: !enabled  # Disabled",
-        "* -> STOW: stowPressed  # A",
+        "* -> STOW: stowPressed || scored  # A, or coral scored",
         "* -> CORAL_INTAKE: intakePressed  # RB",
         "* -> L1: l1Pressed  # LB",
         "* -> L2: l2Pressed  # B",
@@ -120,6 +130,83 @@
         "* -> PIVOTING: pivotFar  # Swing the pivot",
         "* -> EXTENDING: !atGoal  # Extend to the goal",
         "* -> AT_GOAL: always  # At goal"
+      ]
+    },
+    {
+      "id": "EndEffector",
+      "name": "End effector",
+      "description": "The coral in the end effector. At the coral intake the rollers pull a coral in; RT at a reef level scores it; LT (held) spits it out anywhere.",
+      "initial": "EMPTY",
+      "source": "src/main/cpp/subsystems/Superstructure.cpp",
+      "inputChannel": "/RealOutputs/Mayhem/States/{machine}/inputs/{key}",
+      "inputs": {
+        "operator": {
+          "scorePressed": {
+            "name": "RT pressed (score)",
+            "event": true
+          },
+          "ejectHeld": "LT held (eject)"
+        },
+        "internal": {
+          "enabled": "Robot enabled",
+          "atIntake": {
+            "name": "At the coral intake pose",
+            "derivedFrom": [
+              {
+                "machine": "Superstructure",
+                "key": "intakePressed"
+              }
+            ]
+          },
+          "atReefLevel": {
+            "name": "At a reef level (L1-L4)",
+            "derivedFrom": [
+              {
+                "machine": "Superstructure",
+                "key": "l4Pressed"
+              }
+            ]
+          }
+        },
+        "sensor": {
+          "hasCoral": "CANrange sees a coral"
+        }
+      },
+      "states": {
+        "EMPTY": {
+          "name": "Empty",
+          "description": "No coral; rollers off."
+        },
+        "INTAKING": {
+          "name": "Intaking",
+          "description": "At the coral intake: rollers pull in until the sensor sees a coral."
+        },
+        "HOLDING": {
+          "name": "Holding",
+          "description": "Coral in; a small inward push keeps it there."
+        },
+        "SCORING": {
+          "name": "Scoring",
+          "description": "Rollers push the coral out onto the reef."
+        },
+        "EJECTING": {
+          "name": "Ejecting",
+          "description": "LT held: rollers spit out whatever is in there."
+        }
+      },
+      "transitions": [
+        "* -> HOLDING: !enabled && hasCoral  # Disabled with a coral",
+        "* -> EMPTY: !enabled && !hasCoral  # Disabled",
+        "* -> EJECTING: ejectHeld  # LT held",
+        "EJECTING -> HOLDING: !ejectHeld && hasCoral  # LT released, coral still in",
+        "EJECTING -> EMPTY: !ejectHeld && !hasCoral  # LT released",
+        "EMPTY -> HOLDING: hasCoral  # Coral seen (preload)",
+        "EMPTY -> INTAKING: atIntake  # At the coral intake",
+        "INTAKING -> HOLDING: hasCoral  # Got a coral",
+        "INTAKING -> EMPTY: !atIntake  # Left the intake",
+        "HOLDING -> SCORING: scorePressed && atReefLevel  # RT at a reef level",
+        "HOLDING -> EMPTY: !hasCoral && stateTime > 0.5  # Coral lost",
+        "SCORING -> EMPTY: !hasCoral && stateTime > 0.25  # Coral out"
       ]
     }
   ]

@@ -15,6 +15,8 @@
 #include "sim/RobotVisualizer.h"
 #include "subsystems/elevator/ElevatorIOSim.h"
 #include "subsystems/elevator/ElevatorIOTalonFX.h"
+#include "subsystems/endeffector/EndEffectorIOSim.h"
+#include "subsystems/endeffector/EndEffectorIOTalonFX.h"
 #include "subsystems/pivot/PivotIOSim.h"
 #include "subsystems/pivot/PivotIOTalonFX.h"
 #include "subsystems/wrist/WristIOSim.h"
@@ -36,7 +38,8 @@ RobotContainer::RobotContainer()
     : m_elevator{true, MakeIO<ElevatorIOTalonFX, ElevatorIOSim, ElevatorIO>()},
       m_pivot{true, MakeIO<PivotIOTalonFX, PivotIOSim, PivotIO>()},
       m_wrist{true, MakeIO<WristIOTalonFX, WristIOSim, WristIO>()},
-      m_superstructure{m_elevator, m_pivot, m_wrist},
+      m_endEffector{true, MakeIO<EndEffectorIOTalonFX, EndEffectorIOSim, EndEffectorIO>()},
+      m_superstructure{m_elevator, m_pivot, m_wrist, m_endEffector},
       m_autos{m_superstructure} {
   // Each mechanism's gravity feedforward depends on the others.
   m_elevator.SetPivotAngleSupplier([this] { return m_pivot.GetAngleRad(); });
@@ -51,6 +54,8 @@ RobotContainer::RobotContainer()
       m_pivot.SetAngle([this] { return m_superstructure.PivotTargetDeg(); }));
   m_wrist.SetDefaultCommand(
       m_wrist.SetAngle([this] { return m_superstructure.WristTargetDeg(); }));
+  m_endEffector.SetDefaultCommand(
+      m_endEffector.SetVoltage([this] { return m_superstructure.RollerTargetVolts(); }));
 
   frc::SmartDashboard::PutData("Auto Chooser", &m_autos.Chooser());
   ConfigureBindings();
@@ -82,6 +87,12 @@ void RobotContainer::ConfigureBindings() {
   m_driverController.Y().OnTrue(request(Goal::L4));
   m_driverController.LeftBumper().OnTrue(request(Goal::L1));
   m_driverController.RightBumper().OnTrue(request(Goal::CORAL_INTAKE));
+  // End effector: RT scores the held coral (at a reef level), LT held spits it out.
+  m_driverController.RightTrigger().OnTrue(
+      frc2::cmd::RunOnce([this] { m_superstructure.RequestScore(); }));
+  m_driverController.LeftTrigger()
+      .OnTrue(frc2::cmd::RunOnce([this] { m_superstructure.SetEjectHeld(true); }))
+      .OnFalse(frc2::cmd::RunOnce([this] { m_superstructure.SetEjectHeld(false); }));
 }
 
 void RobotContainer::Periodic() {
