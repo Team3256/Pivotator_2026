@@ -1,0 +1,8 @@
+{
+  "parts": {
+    "Pivot": "Four Kraken X60s tilt the whole elevator at its base, from lying flat (0°) to upright (90°). There's no absolute encoder, so the robot must be turned on with the pivot upright.",
+    "Elevator": "Two Kraken X60s drive a 2-stage continuous elevator, 0.91 m of carriage travel. It must be fully down at power-on (or homed with the Home command).",
+    "Wrist": "Two Kraken X44s through ThriftyBot cycloidals turn the end effector on the carriage. Its angle is measured from the elevator, so the end effector's angle from the floor is pivot + wrist.",
+    "Superstructure": "The driver picks a goal (A stow, RB coral intake, LB/B/X/Y = L1-L4). The Motion machine gets there safely: a pivot move of more than 5° first pulls the elevator in below 0.15 m, then swings the pivot, then extends."
+  }
+}

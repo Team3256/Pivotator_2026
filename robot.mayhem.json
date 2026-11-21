@@ -1,0 +1,426 @@
+{
+  "format": "mayhem-suite",
+  "version": 1,
+  "revision": 2,
+  "id": "pivotator-2026",
+  "name": "Pivotator 2026",
+  "field": {
+    "name": "2025 REEFSCAPE",
+    "width": 17.548,
+    "height": 8.052
+  },
+  "robot": {
+    "name": "Pivotvator (no drivetrain yet)",
+    "length": 0.85,
+    "width": 0.85,
+    "start": {
+      "x": 2,
+      "y": 4,
+      "heading": 0
+    },
+    "constraints": {
+      "maxVelocity": 4.5,
+      "maxAcceleration": 12,
+      "maxAngularVelocity": 12.566370614359172,
+      "maxAngularAcceleration": 26.17993877991494,
+      "translationKp": 5,
+      "rotationKp": 3
+    }
+  },
+  "signals": [],
+  "routines": [
+    {
+      "id": "score-l4-in-place",
+      "name": "Score L4 in place",
+      "initial": "raise",
+      "description": "No drivetrain yet: raise to L4 where the robot stands, then stow.",
+      "nodes": [
+        {
+          "id": "raise",
+          "name": "Raise to L4",
+          "kind": "action",
+          "action": "superstructure.scoreL4",
+          "timeout": 5,
+          "description": "Superstructure goal L4; done when Motion reaches AT_GOAL."
+        },
+        {
+          "id": "stow",
+          "name": "Stow",
+          "kind": "action",
+          "action": "superstructure.stow",
+          "timeout": 5,
+          "description": "Superstructure goal STOW; done when Motion reaches AT_GOAL."
+        },
+        {
+          "id": "done",
+          "name": "Auto complete",
+          "kind": "finish",
+          "timeout": 1
+        }
+      ],
+      "transitions": [
+        {
+          "id": "at-l4",
+          "from": "raise",
+          "to": "stow",
+          "condition": {
+            "kind": "always"
+          }
+        },
+        {
+          "id": "stowed",
+          "from": "stow",
+          "to": "done",
+          "condition": {
+            "kind": "always"
+          }
+        }
+      ]
+    }
+  ],
+  "extensions": {
+    "machines": [
+      {
+        "format": "mayhem-machine",
+        "version": 1,
+        "id": "Superstructure",
+        "name": "Superstructure goal",
+        "description": "Where the driver wants the end effector: stowed, at the coral intake, or at a reef level. Each button picks a goal; Motion gets the pivot, elevator and wrist there safely.",
+        "initial": "STOW",
+        "states": [
+          {
+            "id": "STOW",
+            "name": "Stow",
+            "description": "Elevator down, pivot upright, wrist in line.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "CORAL_INTAKE",
+            "name": "Coral intake",
+            "description": "Pivot tipped forward, wrist down to take coral.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "L1",
+            "name": "L1",
+            "description": "Trough.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "L2",
+            "name": "L2",
+            "description": "Reef level 2.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "L3",
+            "name": "L3",
+            "description": "Reef level 3.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "L4",
+            "name": "L4",
+            "description": "Reef level 4: elevator near full extension.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          }
+        ],
+        "inputs": [
+          {
+            "key": "stowPressed",
+            "name": "A pressed (stow)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/stowPressed"
+          },
+          {
+            "key": "intakePressed",
+            "name": "RB pressed (coral intake)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/intakePressed"
+          },
+          {
+            "key": "l1Pressed",
+            "name": "LB pressed (L1)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/l1Pressed"
+          },
+          {
+            "key": "l2Pressed",
+            "name": "B pressed (L2)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/l2Pressed"
+          },
+          {
+            "key": "l3Pressed",
+            "name": "X pressed (L3)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/l3Pressed"
+          },
+          {
+            "key": "l4Pressed",
+            "name": "Y pressed (L4)",
+            "type": "boolean",
+            "initial": false,
+            "category": "operator",
+            "event": true,
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/l4Pressed"
+          },
+          {
+            "key": "enabled",
+            "name": "Robot enabled",
+            "type": "boolean",
+            "initial": false,
+            "category": "internal",
+            "channel": "/RealOutputs/Mayhem/States/Superstructure/inputs/enabled"
+          }
+        ],
+        "transitions": [
+          {
+            "id": "any-to-STOW",
+            "from": "*",
+            "to": "STOW",
+            "condition": {
+              "kind": "signal",
+              "key": "enabled",
+              "op": "eq",
+              "value": false
+            },
+            "name": "Disabled"
+          },
+          {
+            "id": "any-to-STOW-2",
+            "from": "*",
+            "to": "STOW",
+            "condition": {
+              "kind": "signal",
+              "key": "stowPressed",
+              "op": "eq",
+              "value": true
+            },
+            "name": "A"
+          },
+          {
+            "id": "any-to-CORAL_INTAKE",
+            "from": "*",
+            "to": "CORAL_INTAKE",
+            "condition": {
+              "kind": "signal",
+              "key": "intakePressed",
+              "op": "eq",
+              "value": true
+            },
+            "name": "RB"
+          },
+          {
+            "id": "any-to-L1",
+            "from": "*",
+            "to": "L1",
+            "condition": {
+              "kind": "signal",
+              "key": "l1Pressed",
+              "op": "eq",
+              "value": true
+            },
+            "name": "LB"
+          },
+          {
+            "id": "any-to-L2",
+            "from": "*",
+            "to": "L2",
+            "condition": {
+              "kind": "signal",
+              "key": "l2Pressed",
+              "op": "eq",
+              "value": true
+            },
+            "name": "B"
+          },
+          {
+            "id": "any-to-L3",
+            "from": "*",
+            "to": "L3",
+            "condition": {
+              "kind": "signal",
+              "key": "l3Pressed",
+              "op": "eq",
+              "value": true
+            },
+            "name": "X"
+          },
+          {
+            "id": "any-to-L4",
+            "from": "*",
+            "to": "L4",
+            "condition": {
+              "kind": "signal",
+              "key": "l4Pressed",
+              "op": "eq",
+              "value": true
+            },
+            "name": "Y"
+          }
+        ]
+      },
+      {
+        "format": "mayhem-machine",
+        "version": 1,
+        "id": "Motion",
+        "name": "Motion",
+        "description": "Moves the pivot, elevator and wrist to the goal in a safe order. The pivot swings the whole elevator, so before a big pivot move the elevator is pulled in below the safe height; it extends only once the pivot is there.",
+        "initial": "IDLE",
+        "selection": "priority",
+        "states": [
+          {
+            "id": "IDLE",
+            "name": "Idle",
+            "description": "Robot disabled: motors off.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "RETRACTING",
+            "name": "Retracting",
+            "description": "Elevator pulls in below the safe height; the pivot holds where it is.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "PIVOTING",
+            "name": "Pivoting",
+            "description": "Elevator held in; pivot and wrist move to the goal.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "EXTENDING",
+            "name": "Extending",
+            "description": "Pivot there; elevator and wrist finish moving to the goal.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          },
+          {
+            "id": "AT_GOAL",
+            "name": "At goal",
+            "description": "Everything within tolerance of the goal.",
+            "source": "src/main/cpp/subsystems/Superstructure.cpp"
+          }
+        ],
+        "inputs": [
+          {
+            "key": "enabled",
+            "name": "Robot enabled",
+            "type": "boolean",
+            "initial": false,
+            "category": "internal",
+            "channel": "/RealOutputs/Mayhem/States/Motion/inputs/enabled"
+          },
+          {
+            "key": "pivotFar",
+            "name": "Pivot far from its goal (over 5°, until back within 2°)",
+            "type": "boolean",
+            "initial": false,
+            "category": "sensor",
+            "channel": "/RealOutputs/Mayhem/States/Motion/inputs/pivotFar"
+          },
+          {
+            "key": "elevatorSafe",
+            "name": "Elevator below the pivot-safe height",
+            "type": "boolean",
+            "initial": false,
+            "category": "sensor",
+            "channel": "/RealOutputs/Mayhem/States/Motion/inputs/elevatorSafe"
+          },
+          {
+            "key": "atGoal",
+            "name": "Pivot, elevator and wrist at the goal",
+            "type": "boolean",
+            "initial": false,
+            "category": "sensor",
+            "channel": "/RealOutputs/Mayhem/States/Motion/inputs/atGoal"
+          }
+        ],
+        "transitions": [
+          {
+            "id": "any-to-IDLE",
+            "from": "*",
+            "to": "IDLE",
+            "condition": {
+              "kind": "signal",
+              "key": "enabled",
+              "op": "eq",
+              "value": false
+            },
+            "name": "Disabled"
+          },
+          {
+            "id": "any-to-RETRACTING",
+            "from": "*",
+            "to": "RETRACTING",
+            "condition": {
+              "kind": "all",
+              "conditions": [
+                {
+                  "kind": "signal",
+                  "key": "pivotFar",
+                  "op": "eq",
+                  "value": true
+                },
+                {
+                  "kind": "signal",
+                  "key": "elevatorSafe",
+                  "op": "eq",
+                  "value": false
+                }
+              ]
+            },
+            "name": "Pull the elevator in first"
+          },
+          {
+            "id": "any-to-PIVOTING",
+            "from": "*",
+            "to": "PIVOTING",
+            "condition": {
+              "kind": "signal",
+              "key": "pivotFar",
+              "op": "eq",
+              "value": true
+            },
+            "name": "Swing the pivot"
+          },
+          {
+            "id": "any-to-EXTENDING",
+            "from": "*",
+            "to": "EXTENDING",
+            "condition": {
+              "kind": "signal",
+              "key": "atGoal",
+              "op": "eq",
+              "value": false
+            },
+            "name": "Extend to the goal"
+          },
+          {
+            "id": "any-to-AT_GOAL",
+            "from": "*",
+            "to": "AT_GOAL",
+            "condition": {
+              "kind": "always"
+            },
+            "name": "At goal"
+          }
+        ]
+      }
+    ]
+  }
+}

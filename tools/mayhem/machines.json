@@ -1,0 +1,126 @@
+{
+  "machines": [
+    {
+      "id": "Superstructure",
+      "name": "Superstructure goal",
+      "description": "Where the driver wants the end effector: stowed, at the coral intake, or at a reef level. Each button picks a goal; Motion gets the pivot, elevator and wrist there safely.",
+      "initial": "STOW",
+      "source": "src/main/cpp/subsystems/Superstructure.cpp",
+      "inputChannel": "/RealOutputs/Mayhem/States/{machine}/inputs/{key}",
+      "inputs": {
+        "operator": {
+          "stowPressed": {
+            "name": "A pressed (stow)",
+            "event": true
+          },
+          "intakePressed": {
+            "name": "RB pressed (coral intake)",
+            "event": true
+          },
+          "l1Pressed": {
+            "name": "LB pressed (L1)",
+            "event": true
+          },
+          "l2Pressed": {
+            "name": "B pressed (L2)",
+            "event": true
+          },
+          "l3Pressed": {
+            "name": "X pressed (L3)",
+            "event": true
+          },
+          "l4Pressed": {
+            "name": "Y pressed (L4)",
+            "event": true
+          }
+        },
+        "internal": {
+          "enabled": "Robot enabled"
+        }
+      },
+      "states": {
+        "STOW": {
+          "name": "Stow",
+          "description": "Elevator down, pivot upright, wrist in line."
+        },
+        "CORAL_INTAKE": {
+          "name": "Coral intake",
+          "description": "Pivot tipped forward, wrist down to take coral."
+        },
+        "L1": {
+          "name": "L1",
+          "description": "Trough."
+        },
+        "L2": {
+          "name": "L2",
+          "description": "Reef level 2."
+        },
+        "L3": {
+          "name": "L3",
+          "description": "Reef level 3."
+        },
+        "L4": {
+          "name": "L4",
+          "description": "Reef level 4: elevator near full extension."
+        }
+      },
+      "transitions": [
+        "* -> STOW: !enabled  # Disabled",
+        "* -> STOW: stowPressed  # A",
+        "* -> CORAL_INTAKE: intakePressed  # RB",
+        "* -> L1: l1Pressed  # LB",
+        "* -> L2: l2Pressed  # B",
+        "* -> L3: l3Pressed  # X",
+        "* -> L4: l4Pressed  # Y"
+      ]
+    },
+    {
+      "id": "Motion",
+      "name": "Motion",
+      "description": "Moves the pivot, elevator and wrist to the goal in a safe order. The pivot swings the whole elevator, so before a big pivot move the elevator is pulled in below the safe height; it extends only once the pivot is there.",
+      "initial": "IDLE",
+      "selection": "priority",
+      "source": "src/main/cpp/subsystems/Superstructure.cpp",
+      "inputChannel": "/RealOutputs/Mayhem/States/{machine}/inputs/{key}",
+      "inputs": {
+        "internal": {
+          "enabled": "Robot enabled"
+        },
+        "sensor": {
+          "pivotFar": "Pivot far from its goal (over 5°, until back within 2°)",
+          "elevatorSafe": "Elevator below the pivot-safe height",
+          "atGoal": "Pivot, elevator and wrist at the goal"
+        }
+      },
+      "states": {
+        "IDLE": {
+          "name": "Idle",
+          "description": "Robot disabled: motors off."
+        },
+        "RETRACTING": {
+          "name": "Retracting",
+          "description": "Elevator pulls in below the safe height; the pivot holds where it is."
+        },
+        "PIVOTING": {
+          "name": "Pivoting",
+          "description": "Elevator held in; pivot and wrist move to the goal."
+        },
+        "EXTENDING": {
+          "name": "Extending",
+          "description": "Pivot there; elevator and wrist finish moving to the goal."
+        },
+        "AT_GOAL": {
+          "name": "At goal",
+          "description": "Everything within tolerance of the goal."
+        }
+      },
+      "transitions": [
+        "* -> IDLE: !enabled  # Disabled",
+        "* -> RETRACTING: pivotFar && !elevatorSafe  # Pull the elevator in first",
+        "* -> PIVOTING: pivotFar  # Swing the pivot",
+        "* -> EXTENDING: !atGoal  # Extend to the goal",
+        "* -> AT_GOAL: always  # At goal"
+      ]
+    }
+  ]
+}
