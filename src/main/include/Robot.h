@@ -6,7 +6,6 @@
 #include <optional>
 
 #include <frc/TimedRobot.h>
-#include <frc2/command/CommandPtr.h>
 
 #include "RobotContainer.h"
 
@@ -18,6 +17,7 @@ class Robot : public frc::TimedRobot {
   void DisabledPeriodic() override;
   void AutonomousInit() override;
   void AutonomousPeriodic() override;
+  void AutonomousExit() override;
   void TeleopInit() override;
   void TeleopPeriodic() override;
   void TestInit() override;
@@ -25,9 +25,9 @@ class Robot : public frc::TimedRobot {
   void SimulationInit() override;
   void SimulationPeriodic() override;
 
- private:
-  std::optional<frc2::CommandPtr> m_autonomousCommand;
+  RobotContainer& Container() { return *m_container; }
 
+ private:
   // optional so it's created in the Robot() body AFTER logging starts (a plain member would be
   // built before the constructor body runs).
   std::optional<RobotContainer> m_container;

@@ -3,9 +3,6 @@
 
 #include "sim/RobotVisualizer.h"
 
-#include <array>
-
-#include <frc/geometry/Pose3d.h>
 #include <frc/geometry/Rotation3d.h>
 #include <frc/geometry/Transform3d.h>
 #include <frc/geometry/Translation3d.h>
@@ -27,14 +24,6 @@ const frc::Translation3d kElevatorDirection{1.0_m, 0.0_m, 0.0_m};
 
 /** Wrist axle (Thrifty Cycloidal output) when the elevator is flat and fully retracted. */
 const frc::Translation3d kWristAxle{0.395_m, 0.0_m, 0.20_m};
-
-const std::array<frc::Pose3d, RobotVisualizer::kNumComponents> kZeroPoses{};
-
-/**
- * There's no drivetrain code yet, so park the robot at a fixed spot on the field. AdvantageScope
- * needs a robot pose to hang the components on. Replace with the real odometry pose later.
- */
-const frc::Pose3d kParkedRobotPose{2.0_m, 4.0_m, 0.0_m, frc::Rotation3d{}};
 
 /** Apply `inner` first, then `outer`. */
 frc::Pose3d Compose(const frc::Pose3d& outer, const frc::Pose3d& inner) {
@@ -59,26 +48,30 @@ frc::Rotation3d PitchUp(double radians) {
 
 }  // namespace
 
-void RobotVisualizer::Update(double elevatorMeters) {
-  Update(kPivotAngleAtCadRad, elevatorMeters, kWristAngleAtCadRad);
+frc::Pose3d RobotVisualizer::ParkedRobotPose() {
+  return frc::Pose3d{2.0_m, 4.0_m, 0.0_m, frc::Rotation3d{}};
 }
 
-void RobotVisualizer::Update(double pivotRad, double elevatorMeters, double wristRad) {
+std::array<frc::Pose3d, RobotVisualizer::kNumComponents> RobotVisualizer::ComponentPoses(
+    double pivotRad, double elevatorMeters, double wristRad) {
   frc::Pose3d pivot = RotateAbout(kPivotAxle, PitchUp(pivotRad - kPivotAngleAtCadRad));
-  frc::Pose3d stage1 = Slide(pivot, elevatorMeters / 2.0);
   frc::Pose3d carriage = Slide(pivot, elevatorMeters);
-  frc::Pose3d wrist =
-      Compose(carriage, RotateAbout(kWristAxle, PitchUp(wristRad - kWristAngleAtCadRad)));
 
   std::array<frc::Pose3d, kNumComponents> poses;
   poses[kFixedStageIndex] = pivot;
-  poses[kStage1Index] = stage1;
+  poses[kStage1Index] = Slide(pivot, elevatorMeters / 2.0);
   poses[kCarriageIndex] = carriage;
-  poses[kWristIndex] = wrist;
-  Log::Record("RobotVisualizer/ComponentPoses", poses);
-  Log::Record("RobotVisualizer/RobotPose", kParkedRobotPose);
+  poses[kWristIndex] =
+      Compose(carriage, RotateAbout(kWristAxle, PitchUp(wristRad - kWristAngleAtCadRad)));
+  return poses;
+}
 
+void RobotVisualizer::Update(double pivotRad, double elevatorMeters, double wristRad) {
+  Log::Record("RobotVisualizer/ComponentPoses",
+              ComponentPoses(pivotRad, elevatorMeters, wristRad));
+  Log::Record("RobotVisualizer/RobotPose", ParkedRobotPose());
   // All-zero poses: drag this onto the robot instead when lining up config.json. Every part
   // should then sit exactly where it does in the CAD export.
+  static const std::array<frc::Pose3d, kNumComponents> kZeroPoses{};
   Log::Record("RobotVisualizer/ZeroedComponentPoses", kZeroPoses);
 }

@@ -3,13 +3,17 @@
 
 #pragma once
 
+#include <array>
+
+#include <frc/geometry/Pose3d.h>
+
 /**
- * Logs 3D poses of the robot's moving parts so AdvantageScope can animate our CAD model.
+ * 3D poses of the robot's moving parts, for the CAD model in Mayhem's 3D replay and
+ * AdvantageScope (ascope_assets/Robot_Pivotvator2026).
  *
- * How it works: in AdvantageScope's custom robot config.json, each moving part ("component") is
- * its own .glb file, listed in a fixed order. Every loop we log a Pose3d[] in that SAME order.
- * Each pose says how that part has moved from where it sits in the CAD export. A pose of all
- * zeros means "exactly where it is in CAD".
+ * The model's config.json lists each moving part ("component") as its own .glb, in a fixed
+ * order. Every loop we log a Pose3d[] in that SAME order. Each pose says how that part has moved
+ * from where it sits in the CAD export; all zeros means "exactly where it is in CAD".
  *
  * The CAD export ("00. Main Unconstrained") has the elevator lying FLAT, pointing forward, fully
  * retracted, with the wrist at its CAD angle. All numbers are in robot coordinates (X forward,
@@ -21,7 +25,9 @@
  *   3. Carriage: fixed stage, then slides h along the elevator.
  *   4. Wrist + end effector: carriage, then rotates about the wrist axle.
  *
- * Runs on the real robot too, so log files from matches can be watched the same way.
+ * Two copies get logged: "RobotVisualizer/ComponentPoses" from the measured (encoder) values, on
+ * the real robot and in sim, and "Sim/Components" from the simulation's true mechanism state
+ * (what Mayhem's 3D replay draws).
  */
 namespace RobotVisualizer {
 
@@ -42,14 +48,22 @@ inline constexpr double kPivotAngleAtCadRad = 0.0;
 /** Wrist angle (as the wrist code reports it) at which the CAD was drawn. TODO: confirm. */
 inline constexpr double kWristAngleAtCadRad = 0.0;
 
-/** Elevator only (pivot and wrist held at their CAD angles). */
-void Update(double elevatorMeters);
+/**
+ * There's no drivetrain code yet, so the robot is parked at a fixed spot on the field. Mayhem
+ * and AdvantageScope need a robot pose to hang the components on. Replace with the real odometry
+ * pose once the robot drives.
+ */
+frc::Pose3d ParkedRobotPose();
 
 /**
  * @param pivotRad pivot angle; positive tilts the elevator UP from flat
  * @param elevatorMeters carriage travel from fully retracted (Elevator::GetPositionMeters)
  * @param wristRad wrist angle; positive tips the end effector UP (same sense as the pivot)
  */
+std::array<frc::Pose3d, kNumComponents> ComponentPoses(double pivotRad, double elevatorMeters,
+                                                       double wristRad);
+
+/** Logs the measured component poses ("RobotVisualizer/ComponentPoses") and the robot pose. */
 void Update(double pivotRad, double elevatorMeters, double wristRad);
 
 }  // namespace RobotVisualizer

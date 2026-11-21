@@ -3,23 +3,16 @@
 
 #pragma once
 
-#include <functional>
-
-#include <ctre/phoenix6/sim/TalonFXSimState.hpp>
-#include <frc/simulation/SingleJointedArmSim.h>
-
 #include "subsystems/wrist/WristIOTalonFX.h"
 
-/** Simulated wrist. Gravity depends on (pivot + wrist), so we apply it ourselves. */
+/**
+ * Simulated wrist: the real TalonFX IO, both motors and the wrist simulated on sim::PhysicsWorld.
+ * Its gravity depends on (pivot + wrist); the world handles that.
+ */
 class WristIOSim : public WristIOTalonFX {
  public:
-  explicit WristIOSim(std::function<double()> pivotAngleRad);
+  WristIOSim();
 
   void UpdateInputs(WristIOInputs& inputs) override;
-
- private:
-  ctre::phoenix6::sim::TalonFXSimState& m_leaderSim;
-  ctre::phoenix6::sim::TalonFXSimState& m_followerSim;
-  std::function<double()> m_pivotAngleRad;
-  frc::sim::SingleJointedArmSim m_physics;
+  void ResetPosition(double degrees) override;
 };

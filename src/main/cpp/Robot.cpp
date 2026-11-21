@@ -3,19 +3,52 @@
 
 #include "Robot.h"
 
+#include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <string>
+
 #include <ctre/phoenix6/SignalLogger.hpp>
-#include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
+#include <frc/Filesystem.h>
 #include <frc2/command/CommandScheduler.h>
 
-#include "sim/SimBattery.h"
+#include "sim/PhysicsWorld.h"
+#include "util/Log.h"
+
+namespace {
+
+/**
+ * Where the .wpilog goes. Robot: WPILib's default (USB stick, else /home/lvuser/logs). Sim:
+ * ROBOT_LOG_DIR when set (Mayhem's sim proof sets it), else ./logs; tests that set ROBOT_NO_LOG
+ * skip the file.
+ */
+void StartLogging(bool real) {
+  if (real) {
+    Log::Start();
+  } else if (const char* dir = std::getenv("ROBOT_LOG_DIR")) {
+    Log::Start(dir);
+  } else if (std::getenv("ROBOT_NO_LOG") == nullptr) {
+    Log::Start("logs");
+  }
+}
+
+/**
+ * The build stamp (deploy/mayhem-build.json, written by the build): which commit this is. Logged
+ * once as Mayhem/Build so the Mayhem app can tell which code a log ran and what's on the robot.
+ */
+std::string ReadBuildStamp() {
+  std::ifstream in{frc::filesystem::GetDeployDirectory() + "/mayhem-build.json"};
+  std::stringstream text;
+  text << in.rdbuf();
+  return text.str();
+}
+
+}  // namespace
 
 Robot::Robot() {
-  // Logging replaces AdvantageKit: every value from Log::Record goes to NetworkTables (live view
-  // in AdvantageScope) and DataLogManager saves all of NetworkTables + DS/joystick data to a
-  // .wpilog (roboRIO: USB stick if plugged in, else /home/lvuser/logs).
-  frc::DataLogManager::Start();
-  frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
+  StartLogging(IsReal());
+  Log::Record("Mayhem/Build", ReadBuildStamp());
 
   // We log Phoenix signals ourselves already, so skip CTRE's separate hoot logs.
   ctre::phoenix6::SignalLogger::EnableAutoLogging(false);
@@ -38,19 +71,18 @@ void Robot::DisabledInit() {}
 void Robot::DisabledPeriodic() {}
 
 void Robot::AutonomousInit() {
-  m_autonomousCommand = m_container->GetAutonomousCommand();
-  if (m_autonomousCommand) {
-    frc2::CommandScheduler::GetInstance().Schedule(m_autonomousCommand.value());
-  }
+  m_container->Autos().Start();
 }
 
-void Robot::AutonomousPeriodic() {}
-
-void Robot::TeleopInit() {
-  if (m_autonomousCommand) {
-    m_autonomousCommand->Cancel();
-  }
+void Robot::AutonomousPeriodic() {
+  m_container->Autos().Periodic();
 }
+
+void Robot::AutonomousExit() {
+  m_container->Autos().Stop();
+}
+
+void Robot::TeleopInit() {}
 
 void Robot::TeleopPeriodic() {}
 
@@ -63,8 +95,8 @@ void Robot::TestPeriodic() {}
 void Robot::SimulationInit() {}
 
 void Robot::SimulationPeriodic() {
-  // Sag the sim battery using every mechanism's current draw from this loop.
-  SimBattery::Update();
+  // One loop of physics for every simulated mechanism and the battery (Mayhem's engine).
+  sim::PhysicsWorld::Get().Step(GetPeriod().value());
 }
 
 #ifndef RUNNING_FRC_TESTS

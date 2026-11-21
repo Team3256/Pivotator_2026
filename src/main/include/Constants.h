@@ -9,6 +9,7 @@
  */
 namespace OperatorConstants {
 
-inline constexpr int kTestControllerPort = 0;
+/** The driver's Xbox controller (Mayhem's sim proof drives this one). */
+inline constexpr int kDriverControllerPort = 0;
 
 }  // namespace OperatorConstants
