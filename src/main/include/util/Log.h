@@ -6,6 +6,7 @@
 #include <span>
 #include <string_view>
 
+#include <frc/geometry/Pose2d.h>
 #include <frc/geometry/Pose3d.h>
 #include <wpi/DataLog.h>
 
@@ -42,6 +43,7 @@ inline void Record(std::string_view key, const char* value) {
   Record(key, std::string_view{value});
 }
 void Record(std::string_view key, std::span<const double> values);
+void Record(std::string_view key, const frc::Pose2d& value);
 void Record(std::string_view key, const frc::Pose3d& value);
 void Record(std::string_view key, std::span<const frc::Pose3d> values);
 

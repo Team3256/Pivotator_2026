@@ -11,6 +11,7 @@
 
 #include <frc/DataLogManager.h>
 #include <frc/DriverStation.h>
+#include <frc/geometry/struct/Pose2dStruct.h>
 #include <frc/geometry/struct/Pose3dStruct.h>
 #include <networktables/BooleanTopic.h>
 #include <networktables/DoubleArrayTopic.h>
@@ -127,6 +128,19 @@ void Log::Record(std::string_view key, std::span<const double> values) {
     c.entry->Update(values);
   }
   c.pub.Set(values);
+}
+
+void Log::Record(std::string_view key, const frc::Pose2d& value) {
+  static std::unordered_map<std::string, Channel<wpi::log::StructLogEntry<frc::Pose2d>,
+                                                  nt::StructPublisher<frc::Pose2d>>>
+      channels;
+  auto& c = Get(channels, key, [](const std::string& t) {
+    return Inst().GetStructTopic<frc::Pose2d>(t).Publish();
+  });
+  if (c.entry) {
+    c.entry->Update(value);
+  }
+  c.pub.Set(value);
 }
 
 void Log::Record(std::string_view key, const frc::Pose3d& value) {
