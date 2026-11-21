@@ -1,0 +1,51 @@
+{
+  "scenarios": [
+    {
+      "name": "Y goes to L4",
+      "steps": ["teleop", "wait 0.5", "press Y", "wait 4"],
+      "expect": [
+        "Superstructure goal is L4 by 0.7 s",
+        "Superstructure goal is L4 at 4.4 s",
+        "Motion is AT_GOAL at 4.4 s",
+        "battery stays above 9 V"
+      ]
+    },
+    {
+      "name": "B to L2 swings the pivot before extending",
+      "steps": ["teleop", "wait 0.5", "press B", "wait 4"],
+      "expect": [
+        "Superstructure goal is L2 by 0.7 s",
+        "Motion reaches PIVOTING",
+        "Superstructure goal is L2 at 4.4 s",
+        "Motion is AT_GOAL at 4.4 s"
+      ]
+    },
+    {
+      "name": "Coral intake from L4 pulls the elevator in first",
+      "steps": ["teleop", "wait 0.5", "press Y", "wait 4", "press RB", "wait 5"],
+      "expect": [
+        "Motion reaches RETRACTING",
+        "Superstructure goal is CORAL_INTAKE at 9.4 s",
+        "Motion is AT_GOAL at 9.4 s"
+      ]
+    },
+    {
+      "name": "A stows from L3",
+      "steps": ["teleop", "wait 0.5", "press X", "wait 4", "press A", "wait 4"],
+      "expect": [
+        "Superstructure goal is L3 at 4.4 s",
+        "Motion is AT_GOAL at 4.4 s",
+        "Superstructure goal is STOW at 8.4 s",
+        "Motion is AT_GOAL at 8.4 s"
+      ]
+    },
+    {
+      "name": "Disabling goes idle and back to stow",
+      "steps": ["teleop", "wait 0.5", "press Y", "wait 1", "disabled", "wait 0.5"],
+      "expect": [
+        "Motion is IDLE at 1.8 s",
+        "Superstructure goal is STOW at 1.8 s"
+      ]
+    }
+  ]
+}
