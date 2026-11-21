@@ -1,35 +1,78 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// Copyright (c) 2026 FRC 3256
+// https://github.com/Team3256
 
 #include "RobotContainer.h"
 
-#include <frc2/command/button/Trigger.h>
+#include <memory>
+#include <utility>
 
-#include "commands/Autos.h"
-#include "commands/ExampleCommand.h"
+#include <frc/RobotBase.h>
+#include <frc2/command/Commands.h>
 
-RobotContainer::RobotContainer() {
-  // Initialize all of your commands and subsystems here
+#include "sim/RobotVisualizer.h"
+#include "subsystems/elevator/ElevatorIOSim.h"
+#include "subsystems/elevator/ElevatorIOTalonFX.h"
+#include "subsystems/pivot/PivotIOSim.h"
+#include "subsystems/pivot/PivotIOTalonFX.h"
+#include "subsystems/wrist/WristIOSim.h"
+#include "subsystems/wrist/WristIOTalonFX.h"
 
-  // Configure the button bindings
-  ConfigureBindings();
+namespace {
+
+// The lambdas passed in here are only called once the robot is running, after all three
+// subsystems exist, so it's safe for them to point at subsystems constructed later.
+
+std::unique_ptr<ElevatorIO> MakeElevatorIO(std::function<double()> pivotAngleRad) {
+  if (frc::RobotBase::IsReal()) {
+    return std::make_unique<ElevatorIOTalonFX>();
+  }
+  return std::make_unique<ElevatorIOSim>(std::move(pivotAngleRad));
 }
 
-void RobotContainer::ConfigureBindings() {
-  // Configure your trigger bindings here
+std::unique_ptr<PivotIO> MakePivotIO(std::function<double()> elevatorMeters) {
+  if (frc::RobotBase::IsReal()) {
+    return std::make_unique<PivotIOTalonFX>();
+  }
+  return std::make_unique<PivotIOSim>(std::move(elevatorMeters));
+}
 
-  // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-  frc2::Trigger([this] {
-    return m_subsystem.ExampleCondition();
-  }).OnTrue(ExampleCommand(&m_subsystem).ToPtr());
+std::unique_ptr<WristIO> MakeWristIO(std::function<double()> pivotAngleRad) {
+  if (frc::RobotBase::IsReal()) {
+    return std::make_unique<WristIOTalonFX>();
+  }
+  return std::make_unique<WristIOSim>(std::move(pivotAngleRad));
+}
 
-  // Schedule `ExampleMethodCommand` when the Xbox controller's B button is
-  // pressed, cancelling on release.
-  m_driverController.B().WhileTrue(m_subsystem.ExampleMethodCommand());
+}  // namespace
+
+RobotContainer::RobotContainer()
+    : m_elevator{true, MakeElevatorIO([this] { return m_pivot.GetAngleRad(); })},
+      m_pivot{true, MakePivotIO([this] { return m_elevator.GetPositionMeters(); })},
+      m_wrist{true, MakeWristIO([this] { return m_pivot.GetAngleRad(); })} {
+  // Each mechanism's gravity feedforward depends on the others.
+  m_elevator.SetPivotAngleSupplier([this] { return m_pivot.GetAngleRad(); });
+  m_pivot.SetElevatorExtensionSupplier([this] { return m_elevator.GetPositionMeters(); });
+  m_wrist.SetPivotAngleSupplier([this] { return m_pivot.GetAngleRad(); });
+
+  ConfigureTestBindings();
+}
+
+/**
+ * Temporary test buttons for driving the elevator. In the sim GUI, drag "Keyboard 0" onto
+ * Joysticks[0]; then Z/X/C/V are buttons 1-4 = A/B/X/Y.
+ */
+void RobotContainer::ConfigureTestBindings() {
+  m_testController.A().OnTrue(m_elevator.GoToStow());
+  m_testController.B().OnTrue(m_elevator.GoToL2());
+  m_testController.X().OnTrue(m_elevator.GoToL3());
+  m_testController.Y().OnTrue(m_elevator.GoToL4());
+}
+
+void RobotContainer::Periodic() {
+  RobotVisualizer::Update(m_pivot.GetAngleRad(), m_elevator.GetPositionMeters(),
+                          m_wrist.GetAngleRad());
 }
 
 frc2::CommandPtr RobotContainer::GetAutonomousCommand() {
-  // An example command will be run in autonomous
-  return autos::ExampleAuto(&m_subsystem);
+  return frc2::cmd::None();
 }

@@ -1,41 +1,44 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// Copyright (c) 2026 FRC 3256
+// https://github.com/Team3256
 
 #include "Robot.h"
 
+#include <ctre/phoenix6/SignalLogger.hpp>
+#include <frc/DataLogManager.h>
+#include <frc/DriverStation.h>
 #include <frc2/command/CommandScheduler.h>
 
-Robot::Robot() {}
+#include "sim/SimBattery.h"
 
-/**
- * This function is called every 20 ms, no matter the mode. Use
- * this for items like diagnostics that you want to run during disabled,
- * autonomous, teleoperated and test.
- *
- * <p> This runs after the mode specific periodic functions, but before
- * LiveWindow and SmartDashboard integrated updating.
- */
-void Robot::RobotPeriodic() {
-  frc2::CommandScheduler::GetInstance().Run();
+Robot::Robot() {
+  // Logging replaces AdvantageKit: every value from Log::Record goes to NetworkTables (live view
+  // in AdvantageScope) and DataLogManager saves all of NetworkTables + DS/joystick data to a
+  // .wpilog (roboRIO: USB stick if plugged in, else /home/lvuser/logs).
+  frc::DataLogManager::Start();
+  frc::DriverStation::StartDataLog(frc::DataLogManager::GetLog());
+
+  // We log Phoenix signals ourselves already, so skip CTRE's separate hoot logs.
+  ctre::phoenix6::SignalLogger::EnableAutoLogging(false);
+  if (IsSimulation()) {
+    // In sim there's usually no controller plugged in; don't spam the console about it.
+    frc::DriverStation::SilenceJoystickConnectionWarning(true);
+  }
+
+  m_container.emplace();
 }
 
-/**
- * This function is called once each time the robot enters Disabled mode. You
- * can use it to reset any subsystem information you want to clear when the
- * robot is disabled.
- */
+void Robot::RobotPeriodic() {
+  // Runs buttons, commands, and every subsystem's Periodic(). Nothing works without this.
+  frc2::CommandScheduler::GetInstance().Run();
+  m_container->Periodic();
+}
+
 void Robot::DisabledInit() {}
 
 void Robot::DisabledPeriodic() {}
 
-/**
- * This autonomous runs the autonomous command selected by your {@link
- * RobotContainer} class.
- */
 void Robot::AutonomousInit() {
-  m_autonomousCommand = m_container.GetAutonomousCommand();
-
+  m_autonomousCommand = m_container->GetAutonomousCommand();
   if (m_autonomousCommand) {
     frc2::CommandScheduler::GetInstance().Schedule(m_autonomousCommand.value());
   }
@@ -44,34 +47,25 @@ void Robot::AutonomousInit() {
 void Robot::AutonomousPeriodic() {}
 
 void Robot::TeleopInit() {
-  // This makes sure that the autonomous stops running when
-  // teleop starts running. If you want the autonomous to
-  // continue until interrupted by another command, remove
-  // this line or comment it out.
   if (m_autonomousCommand) {
     m_autonomousCommand->Cancel();
   }
 }
 
-/**
- * This function is called periodically during operator control.
- */
 void Robot::TeleopPeriodic() {}
 
-/**
- * This function is called periodically during test mode.
- */
+void Robot::TestInit() {
+  frc2::CommandScheduler::GetInstance().CancelAll();
+}
+
 void Robot::TestPeriodic() {}
 
-/**
- * This function is called once when the robot is first started up.
- */
 void Robot::SimulationInit() {}
 
-/**
- * This function is called periodically whilst in simulation.
- */
-void Robot::SimulationPeriodic() {}
+void Robot::SimulationPeriodic() {
+  // Sag the sim battery using every mechanism's current draw from this loop.
+  SimBattery::Update();
+}
 
 #ifndef RUNNING_FRC_TESTS
 int main() {

@@ -1,6 +1,5 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
+// Copyright (c) 2026 FRC 3256
+// https://github.com/Team3256
 
 #pragma once
 
@@ -8,28 +7,28 @@
 #include <frc2/command/button/CommandXboxController.h>
 
 #include "Constants.h"
-#include "subsystems/ExampleSubsystem.h"
+#include "subsystems/elevator/Elevator.h"
+#include "subsystems/pivot/Pivot.h"
+#include "subsystems/wrist/Wrist.h"
 
-/**
- * This class is where the bulk of the robot should be declared.  Since
- * Command-based is a "declarative" paradigm, very little robot logic should
- * actually be handled in the {@link Robot} periodic methods (other than the
- * scheduler calls).  Instead, the structure of the robot (including subsystems,
- * commands, and trigger mappings) should be declared here.
- */
+/** Creates the subsystems and wires controller buttons to commands. */
 class RobotContainer {
  public:
   RobotContainer();
 
+  /** Called from Robot::RobotPeriodic(), after the CommandScheduler (so subsystems already ran). */
+  void Periodic();
+
   frc2::CommandPtr GetAutonomousCommand();
 
  private:
-  // Replace with CommandPS4Controller or CommandJoystick if needed
-  frc2::CommandXboxController m_driverController{
-      OperatorConstants::kDriverControllerPort};
+  void ConfigureTestBindings();
 
-  // The robot's subsystems are defined here...
-  ExampleSubsystem m_subsystem;
+  frc2::CommandXboxController m_testController{OperatorConstants::kTestControllerPort};
 
-  void ConfigureBindings();
+  // Real robot -> talk to the real TalonFXs. Sim -> same TalonFX code, fed by a physics model.
+  // Each sim needs live values from the other mechanisms, so they read them through lambdas.
+  Elevator m_elevator;
+  Pivot m_pivot;
+  Wrist m_wrist;
 };
