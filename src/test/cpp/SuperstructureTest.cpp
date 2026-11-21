@@ -151,6 +151,8 @@ TEST(Superstructure, EveryAutoCompletes) {
     EXPECT_TRUE(reachedL4);
     EXPECT_EQ(h.C().Autos().Status(), mayhem::RunStatus::Completed);
     EXPECT_TRUE(h.C().GetSuperstructure().IsAt(Goal::STOW));
+    // The preloaded coral was scored.
+    EXPECT_EQ(sim::PhysicsWorld::Get().GetMetrics().scoredOwnHub, 1);
   }
 }
 

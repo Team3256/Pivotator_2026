@@ -6,8 +6,8 @@ robot did.
 
 | File | What it is |
 | --- | --- |
-| `robot.mayhem.json` | The Mayhem project: the field (2025 REEFSCAPE), the autos, and the `Superstructure` and `Motion` state machines. Open it in the Mayhem app. |
-| `tools/mayhem/machines.json` | The two state machines as a compact spec (edit this, then apply it, below). |
+| `robot.mayhem.json` | The Mayhem project: the field (2025 REEFSCAPE), the autos, and the `Superstructure`, `Motion` and `EndEffector` state machines. Open it in the Mayhem app. |
+| `tools/mayhem/machines.json` | The three state machines as a compact spec (edit this, then apply it, below). |
 | `tools/mayhem/scenarios.json` | Sim proof regression checks. Add one for every behavior a driver relies on; never loosen one to make a run pass. |
 | `tools/mayhem/explainer.json` | Plain-language description of each part (Overview → How the robot works). |
 | `src/main/include/commands/MayhemProject.h` | Generated from `robot.mayhem.json`. Don't edit by hand. |
@@ -21,6 +21,8 @@ robot did.
 | A | STOW |
 | RB | CORAL_INTAKE |
 | LB / B / X / Y | L1 / L2 / L3 / L4 |
+| RT | Score the held coral (only at a reef level; then the goal goes back to STOW) |
+| LT (hold) | Spit out the coral |
 
 The `Motion` machine then moves the mechanisms in a safe order. A pivot move of more than 5° first
 pulls the elevator in below 0.15 m (RETRACTING), then swings the pivot (PIVOTING), then extends
