@@ -3,11 +3,19 @@
   "version": 1,
   "proofs": [
     {
-      "by": "Claude",
+      "before": "0c6ffdb27aa37211ed64ea08f4fea8616ce61abc",
+      "by": "someone",
       "ran": 38,
       "failed": [],
       "different": [],
-      "at": "2026-11-21T05:24:33.390Z"
+      "at": "2026-11-21T18:02:56.762Z"
+    },
+    {
+      "at": "2026-11-21T05:24:33.390Z",
+      "by": "Claude",
+      "ran": 38,
+      "failed": [],
+      "different": []
     }
   ]
 }
