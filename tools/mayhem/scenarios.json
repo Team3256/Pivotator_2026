@@ -2,7 +2,12 @@
   "scenarios": [
     {
       "name": "Y goes to L4",
-      "steps": ["teleop", "wait 0.5", "press Y", "wait 4"],
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "press Y",
+        "wait 4"
+      ],
       "expect": [
         "Superstructure goal is L4 by 0.7 s",
         "Superstructure goal is L4 at 4.4 s",
@@ -12,7 +17,12 @@
     },
     {
       "name": "B to L2 swings the pivot before extending",
-      "steps": ["teleop", "wait 0.5", "press B", "wait 4"],
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "press B",
+        "wait 4"
+      ],
       "expect": [
         "Superstructure goal is L2 by 0.7 s",
         "Motion reaches PIVOTING",
@@ -22,7 +32,14 @@
     },
     {
       "name": "Coral intake from L4 pulls the elevator in first",
-      "steps": ["teleop", "wait 0.5", "press Y", "wait 4", "press RB", "wait 5"],
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "press Y",
+        "wait 4",
+        "press RB",
+        "wait 5"
+      ],
       "expect": [
         "Motion reaches RETRACTING",
         "Superstructure goal is CORAL_INTAKE at 9.4 s",
@@ -31,7 +48,14 @@
     },
     {
       "name": "A stows from L3",
-      "steps": ["teleop", "wait 0.5", "press X", "wait 4", "press A", "wait 4"],
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "press X",
+        "wait 4",
+        "press A",
+        "wait 4"
+      ],
       "expect": [
         "Superstructure goal is L3 at 4.4 s",
         "Motion is AT_GOAL at 4.4 s",
@@ -41,10 +65,53 @@
     },
     {
       "name": "Disabling goes idle and back to stow",
-      "steps": ["teleop", "wait 0.5", "press Y", "wait 1", "disabled", "wait 0.5"],
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "press Y",
+        "wait 1",
+        "disabled",
+        "wait 0.5"
+      ],
       "expect": [
         "Motion is IDLE at 1.8 s",
         "Superstructure goal is STOW at 1.8 s"
+      ]
+    },
+    {
+      "name": "Drive across the field without hitting anything",
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "stick left 0 1",
+        "wait 1",
+        "stick left 1 0",
+        "wait 0.6",
+        "stick left 0 0",
+        "wait 1"
+      ],
+      "expect": [
+        "no collisions",
+        "no tip-over",
+        "battery stays above 7.5 V"
+      ]
+    },
+    {
+      "name": "Drive with the elevator at L4 stays upright",
+      "steps": [
+        "teleop",
+        "wait 0.5",
+        "press Y",
+        "wait 3.5",
+        "stick left 0 1",
+        "wait 1",
+        "stick left 0 0",
+        "wait 1"
+      ],
+      "expect": [
+        "Motion is AT_GOAL at 4.1 s",
+        "no tip-over",
+        "no collisions"
       ]
     }
   ]

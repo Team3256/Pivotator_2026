@@ -21,6 +21,9 @@ robot did.
 | A | STOW |
 | RB | CORAL_INTAKE |
 | LB / B / X / Y | L1 / L2 / L3 / L4 |
+| Left stick | Drive (field-centric; slowed while the elevator is up) |
+| Right stick X | Turn |
+| Start | Reset the heading (facing away from the driver) |
 
 The `Motion` machine then moves the mechanisms in a safe order. A pivot move of more than 5° first
 pulls the elevator in below 0.15 m (RETRACTING), then swings the pivot (PIVOTING), then extends
@@ -40,7 +43,7 @@ Edits saved from the Mayhem app regenerate the header themselves.
 
 ## Simulation
 
-`sim::PhysicsWorld` (`src/main/cpp/sim/PhysicsWorld.cpp`) runs Mayhem's physics engine. The
+`sim::PhysicsWorld` (`src/main/cpp/sim/PhysicsWorld.cpp`) runs Mayhem's physics engine: the swerve drivetrain on the REEFSCAPE field (walls, reefs and coral stations are obstacles, `sim/Reefscape2025.cpp`), the mechanisms and the battery. The drivetrain's Phoenix swerve requests go through Mayhem's swerve emulator (`sim/DrivetrainSim.cpp`). The
 robot code commands its real Phoenix TalonFXs, and each loop the world feeds every motor's applied
 request to Mayhem's TalonFX emulator (same configs, so Motion Magic, gains, limits and followers
 run as on the motor controller). The pivot, elevator and wrist are coupled the way a pivotvator
@@ -57,7 +60,7 @@ time.
 
 ## 3D replay
 
-Every sim log has the robot pose (`/RealOutputs/Sim/RobotPose`, parked: no drivetrain yet) and the
+Every sim log has the robot's true pose (`/RealOutputs/Sim/RobotPose`), its odometry estimate (`/RealOutputs/Odometry/Robot`, drawn as a ghost) and the
 four moving parts (`/RealOutputs/Sim/Components`: fixed stage, 1st stage, carriage, wrist), in the
 order of the CAD model's `config.json` (`ascope_assets/`). Mayhem's 3D replay reads the robot model
 and the field model from AdvantageScope's asset folders:

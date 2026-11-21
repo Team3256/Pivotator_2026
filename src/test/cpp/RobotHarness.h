@@ -15,6 +15,7 @@
 #include <hal/DriverStationTypes.h>
 
 #include "Robot.h"
+#include "sim/PhysicsWorld.h"
 
 /** The robot program with its loop function exposed so a test can step it. */
 class SimRobot : public Robot {
@@ -35,9 +36,12 @@ class SimRobot : public Robot {
  */
 class RobotHarness {
  public:
-  /** {@code field}: accepted for Mayhem's probe; this robot has no field simulation yet. */
+  /**
+   * {@code field}: simulate the REEFSCAPE field (walls, reefs, coral stations). Off by default:
+   * most tests check robot logic, so they run on an empty carpet. Mayhem's sim proof turns it on.
+   */
   explicit RobotHarness(bool red = false, bool field = false) {
-    (void)field;
+    sim::PhysicsWorld::SetNextFieldEnabled(field);
     if (std::getenv("ROBOT_LOG_DIR") == nullptr) {
       setenv("ROBOT_NO_LOG", "1", 0);  // plain tests don't leave log files around
     }
