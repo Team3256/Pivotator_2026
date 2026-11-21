@@ -1,0 +1,58 @@
+{
+  "format": "mayhem-proof",
+  "version": 1,
+  "proofs": [
+    {
+      "before": "0c6ffdb27aa37211ed64ea08f4fea8616ce61abc",
+      "by": "Claude",
+      "ran": 41,
+      "failed": [
+        "Drive across the field without hitting anything"
+      ],
+      "different": [
+        "Tap A",
+        "Hold A for 2 s",
+        "Tap B",
+        "Hold B for 2 s",
+        "Tap X",
+        "Hold X for 2 s",
+        "Tap Y",
+        "Hold Y for 2 s",
+        "Tap LB",
+        "Hold LB for 2 s",
+        "Tap RB",
+        "Hold RB for 2 s",
+        "Tap LT",
+        "Hold LT for 2 s",
+        "Tap RT",
+        "Hold RT for 2 s",
+        "Tap Back",
+        "Hold Back for 2 s",
+        "Tap Start",
+        "Hold Start for 2 s",
+        "Tap LS",
+        "Hold LS for 2 s",
+        "Tap RS",
+        "Hold RS for 2 s",
+        "Tap Up",
+        "Hold Up for 2 s",
+        "Tap Down",
+        "Hold Down for 2 s",
+        "Tap Left",
+        "Hold Left for 2 s",
+        "Tap Right",
+        "Hold Right for 2 s",
+        "Auto: Score L4 in place",
+        "Auto: Drive to reef and score L4",
+        "Y goes to L4",
+        "B to L2 swings the pivot before extending",
+        "Coral intake from L4 pulls the elevator in first",
+        "A stows from L3",
+        "Disabling goes idle and back to stow",
+        "Drive across the field without hitting anything",
+        "Drive with the elevator at L4 stays upright"
+      ],
+      "at": "2026-11-21T19:24:30.102Z"
+    }
+  ]
+}
