@@ -64,6 +64,7 @@ void Robot::RobotPeriodic() {
   // Runs buttons, commands, and every subsystem's Periodic(). Nothing works without this.
   frc2::CommandScheduler::GetInstance().Run();
   m_container->Periodic();
+  m_container->EndLoop();
 }
 
 void Robot::DisabledInit() {}

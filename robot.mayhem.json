@@ -1,7 +1,7 @@
 {
   "format": "mayhem-suite",
   "version": 1,
-  "revision": 2,
+  "revision": 4,
   "id": "pivotator-2026",
   "name": "Pivotator 2026",
   "field": {
@@ -10,19 +10,19 @@
     "height": 8.052
   },
   "robot": {
-    "name": "Pivotvator (no drivetrain yet)",
+    "name": "Pivotvator (Kraken X60 swerve, 5.90:1)",
     "length": 0.85,
     "width": 0.85,
     "start": {
-      "x": 2,
-      "y": 4,
-      "heading": 0
+      "x": 7.2,
+      "y": 4.026,
+      "heading": 3.141592653589793
     },
     "constraints": {
-      "maxVelocity": 4.5,
-      "maxAcceleration": 12,
-      "maxAngularVelocity": 12.566370614359172,
-      "maxAngularAcceleration": 26.17993877991494,
+      "maxVelocity": 3.5,
+      "maxAcceleration": 6,
+      "maxAngularVelocity": 6,
+      "maxAngularAcceleration": 12,
       "translationKp": 5,
       "rotationKp": 3
     }
@@ -33,7 +33,7 @@
       "id": "score-l4-in-place",
       "name": "Score L4 in place",
       "initial": "raise",
-      "description": "No drivetrain yet: raise to L4 where the robot stands, then stow.",
+      "description": "Raise to L4 where the robot stands, then stow.",
       "nodes": [
         {
           "id": "raise",
@@ -70,6 +70,108 @@
         {
           "id": "stowed",
           "from": "stow",
+          "to": "done",
+          "condition": {
+            "kind": "always"
+          }
+        }
+      ]
+    },
+    {
+      "id": "reef-l4",
+      "name": "Drive to reef and score L4",
+      "initial": "to-reef",
+      "description": "From the start line, drive up to the blue reef's centre face, raise to L4, stow, back off.",
+      "nodes": [
+        {
+          "id": "to-reef",
+          "name": "Drive to the reef face",
+          "kind": "pose",
+          "goal": {
+            "x": 5.85,
+            "y": 4.026,
+            "heading": 3.141592653589793,
+            "translationTolerance": 0.03,
+            "rotationTolerance": 0.03490658503988659,
+            "velocityTolerance": 0.15,
+            "settleTime": 0.2,
+            "handoffRadius": 0
+          },
+          "timeout": 6,
+          "description": "Bumpers about 10 cm from the reef's face toward the start line; slow approach so it doesn't overshoot into the reef.",
+          "constraints": {
+            "maxVelocity": 1.5,
+            "anticipateSpeedCaps": true
+          }
+        },
+        {
+          "id": "raise",
+          "name": "Raise to L4",
+          "kind": "action",
+          "action": "superstructure.scoreL4",
+          "timeout": 5
+        },
+        {
+          "id": "stow",
+          "name": "Stow",
+          "kind": "action",
+          "action": "superstructure.stow",
+          "timeout": 5
+        },
+        {
+          "id": "back-off",
+          "name": "Back off",
+          "kind": "pose",
+          "goal": {
+            "x": 6.8,
+            "y": 4.026,
+            "heading": 3.141592653589793,
+            "translationTolerance": 0.03,
+            "rotationTolerance": 0.03490658503988659,
+            "velocityTolerance": 0.15,
+            "settleTime": 0.2,
+            "handoffRadius": 0
+          },
+          "timeout": 6,
+          "constraints": {
+            "maxVelocity": 2
+          }
+        },
+        {
+          "id": "done",
+          "name": "Auto complete",
+          "kind": "finish",
+          "timeout": 1
+        }
+      ],
+      "transitions": [
+        {
+          "id": "at-reef",
+          "from": "to-reef",
+          "to": "raise",
+          "condition": {
+            "kind": "always"
+          }
+        },
+        {
+          "id": "at-l4",
+          "from": "raise",
+          "to": "stow",
+          "condition": {
+            "kind": "always"
+          }
+        },
+        {
+          "id": "stowed",
+          "from": "stow",
+          "to": "back-off",
+          "condition": {
+            "kind": "always"
+          }
+        },
+        {
+          "id": "clear",
+          "from": "back-off",
           "to": "done",
           "condition": {
             "kind": "always"

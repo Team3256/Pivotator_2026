@@ -4,13 +4,14 @@
 #include "commands/MayhemAutos.h"
 
 #include <algorithm>
+#include <array>
 
+#include <frc/DriverStation.h>
 #include <frc/Errors.h>
 #include <frc/Timer.h>
 #include <wpi/sendable/SendableBuilder.h>
 
 #include "commands/MayhemProject.h"
-#include "sim/RobotVisualizer.h"
 #include "util/Log.h"
 
 namespace {
@@ -35,10 +36,8 @@ std::string_view StatusName(mayhem::RunStatus status) {
   return "Unknown";
 }
 
-/** No drivetrain yet: the routine is told the robot is parked and standing still. */
-mayhem::Pose ParkedPose() {
-  const auto pose = RobotVisualizer::ParkedRobotPose().ToPose2d();
-  return {pose.X().value(), pose.Y().value(), pose.Rotation().Radians().value()};
+frc::Pose2d ToWpi(const mayhem::Pose& p) {
+  return {units::meter_t{p.x}, units::meter_t{p.y}, frc::Rotation2d{units::radian_t{p.heading}}};
 }
 
 }  // namespace
@@ -70,10 +69,11 @@ void AutoChooser::InitSendable(wpi::SendableBuilder& builder) {
 
 // ---------------- MayhemAutos ----------------
 
-MayhemAutos::MayhemAutos(Superstructure& superstructure) : m_superstructure{superstructure} {
+MayhemAutos::MayhemAutos(Drivetrain& drivetrain, Superstructure& superstructure)
+    : m_drivetrain{drivetrain}, m_superstructure{superstructure} {
   // Fail loudly at boot (not mid-match) if a routine uses an action the robot doesn't handle.
   for (const auto& routine : mayhem_generated::routines) {
-    const auto report = Build(routine)->UnboundReport();
+    const auto report = Build(routine.routine)->UnboundReport();
     if (!report.empty()) {
       FRC_ReportError(frc::err::Error, "Auto '{}' uses actions the robot doesn't handle:\n{}",
                       routine.name, report);
@@ -82,9 +82,9 @@ MayhemAutos::MayhemAutos(Superstructure& superstructure) : m_superstructure{supe
   LogStatus();
 }
 
-std::unique_ptr<mayhem::AutoRunner> MayhemAutos::Build(const mayhem::RoutineInfo& routine) {
+std::unique_ptr<mayhem::AutoRunner> MayhemAutos::Build(mayhem::RoutineView routine) {
   using Goal = Superstructure::Goal;
-  auto runner = std::make_unique<mayhem::AutoRunner>(routine.routine);
+  auto runner = std::make_unique<mayhem::AutoRunner>(routine);
   auto goTo = [this](Goal goal) {
     return mayhem::Action{
         [this, goal] { m_superstructure.Request(goal); },
@@ -104,20 +104,43 @@ std::unique_ptr<mayhem::AutoRunner> MayhemAutos::Build(const mayhem::RoutineInfo
   return runner;
 }
 
+mayhem::Pose MayhemAutos::MeasuredPose() {
+  const auto& p = m_drivetrain.Pose();
+  return {p.X().value(), p.Y().value(), p.Rotation().Radians().value()};
+}
+
+mayhem::Velocity MayhemAutos::MeasuredVelocity() {
+  const auto v = m_drivetrain.GetFieldRelativeSpeeds();
+  return {v.vx.value(), v.vy.value(), v.omega.value()};
+}
+
 void MayhemAutos::Start() {
   m_runner.reset();
+  m_routine.reset();
   m_running = m_chooser.Selected();
-  if (const auto* routine = mayhem::FindRoutine(mayhem_generated::routines, m_running)) {
-    m_runner = Build(*routine);
-    m_runner->Start();
+  if (const auto* info = mayhem::FindRoutine(mayhem_generated::routines, m_running)) {
+    m_routine = std::make_unique<mayhem::AllianceRoutine>(*info, mayhem_generated::fieldLength,
+                                                          mayhem_generated::fieldWidth);
+    const bool red = frc::DriverStation::GetAlliance() == frc::DriverStation::Alliance::kRed;
+    m_routine->Apply(red ? mayhem::FieldTransform::Flip : mayhem::FieldTransform::None);
+    // The robot is placed at the routine's start pose before the match.
+    m_drivetrain.ResetPose(ToWpi(m_routine->StartPose()));
+    m_runner = Build(m_routine->View());
+    m_runner->Start(MeasuredVelocity());
   }
   LogStatus();
 }
 
 void MayhemAutos::Periodic() {
-  if (m_runner) {
-    // The returned field speeds are for a drivetrain; this robot doesn't have one yet.
-    m_runner->Tick(ParkedPose(), mayhem::Velocity{});
+  if (m_runner && m_runner->Status() == mayhem::RunStatus::Running) {
+    const mayhem::Velocity v = m_runner->Tick(MeasuredPose(), MeasuredVelocity());
+    m_drivetrain.ApplyMayhemSpeeds(frc::ChassisSpeeds{units::meters_per_second_t{v.vx},
+                                                      units::meters_per_second_t{v.vy},
+                                                      units::radians_per_second_t{v.omega}});
+    Log::Record("Mayhem/Auto/FieldSpeeds", std::array<double, 3>{v.vx, v.vy, v.omega});
+  } else {
+    // Done (or no routine): hold still until autonomous ends.
+    m_drivetrain.Stop();
   }
   LogStatus();
 }

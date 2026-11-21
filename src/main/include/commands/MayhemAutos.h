@@ -11,8 +11,10 @@
 #include <wpi/sendable/SendableHelper.h>
 
 #include "commands/MayhemObserver.h"
+#include "mayhem/alliance.hpp"
 #include "mayhem/auto_runner.hpp"
 #include "subsystems/Superstructure.h"
+#include "subsystems/swerve/Drivetrain.h"
 
 /**
  * Dashboard chooser for the autonomous routines in robot.mayhem.json (names and order come from
@@ -37,9 +39,13 @@ class AutoChooser : public wpi::Sendable, public wpi::SendableHelper<AutoChooser
 };
 
 /**
- * Runs the selected Mayhem routine with mayhem::AutoRunner. Each action ID a routine can use is
- * bound to the Superstructure here; a routine that uses an ID the robot doesn't handle is
- * reported as a Driver Station error at boot.
+ * Runs the selected Mayhem routine with mayhem::AutoRunner. The routine is blue-origin; on red it
+ * is flipped with mayhem::AllianceRoutine. At the start the drivetrain's pose is reset to the
+ * routine's start pose; every loop the runner gets the measured pose and speeds and returns field
+ * speeds for the drivetrain (pose steps), and the robot holds still once the routine ends.
+ *
+ * Each action ID a routine can use is bound to the Superstructure here; a routine that uses an
+ * ID the robot doesn't handle is reported as a Driver Station error at boot.
  *
  *   superstructure.stow / .intake / .scoreL1 .. .scoreL4: request that goal; the step succeeds
  *   once the Motion machine says the mechanisms got there.
@@ -49,7 +55,7 @@ class AutoChooser : public wpi::Sendable, public wpi::SendableHelper<AutoChooser
  */
 class MayhemAutos {
  public:
-  explicit MayhemAutos(Superstructure& superstructure);
+  MayhemAutos(Drivetrain& drivetrain, Superstructure& superstructure);
 
   AutoChooser& Chooser() { return m_chooser; }
 
@@ -66,12 +72,17 @@ class MayhemAutos {
   }
 
  private:
-  std::unique_ptr<mayhem::AutoRunner> Build(const mayhem::RoutineInfo& routine);
+  std::unique_ptr<mayhem::AutoRunner> Build(mayhem::RoutineView routine);
   void LogStatus();
+  mayhem::Pose MeasuredPose();
+  mayhem::Velocity MeasuredVelocity();
 
+  Drivetrain& m_drivetrain;
   Superstructure& m_superstructure;
   AutoChooser m_chooser;
   MayhemObserver m_observer{"Autonomous"};
+  /** The selected routine, flipped for the alliance; the runner views it, so it must outlive it. */
+  std::unique_ptr<mayhem::AllianceRoutine> m_routine;
   std::unique_ptr<mayhem::AutoRunner> m_runner;
   std::string m_running = AutoChooser::kNoneName;
 };

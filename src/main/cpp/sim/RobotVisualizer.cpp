@@ -48,10 +48,6 @@ frc::Rotation3d PitchUp(double radians) {
 
 }  // namespace
 
-frc::Pose3d RobotVisualizer::ParkedRobotPose() {
-  return frc::Pose3d{2.0_m, 4.0_m, 0.0_m, frc::Rotation3d{}};
-}
-
 std::array<frc::Pose3d, RobotVisualizer::kNumComponents> RobotVisualizer::ComponentPoses(
     double pivotRad, double elevatorMeters, double wristRad) {
   frc::Pose3d pivot = RotateAbout(kPivotAxle, PitchUp(pivotRad - kPivotAngleAtCadRad));
@@ -66,10 +62,11 @@ std::array<frc::Pose3d, RobotVisualizer::kNumComponents> RobotVisualizer::Compon
   return poses;
 }
 
-void RobotVisualizer::Update(double pivotRad, double elevatorMeters, double wristRad) {
+void RobotVisualizer::Update(const frc::Pose2d& robotPose, double pivotRad,
+                             double elevatorMeters, double wristRad) {
   Log::Record("RobotVisualizer/ComponentPoses",
               ComponentPoses(pivotRad, elevatorMeters, wristRad));
-  Log::Record("RobotVisualizer/RobotPose", ParkedRobotPose());
+  Log::Record("RobotVisualizer/RobotPose", frc::Pose3d{robotPose});
   // All-zero poses: drag this onto the robot instead when lining up config.json. Every part
   // should then sit exactly where it does in the CAD export.
   static const std::array<frc::Pose3d, kNumComponents> kZeroPoses{};

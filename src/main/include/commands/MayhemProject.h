@@ -13,16 +13,16 @@ namespace mayhem_generated {
 // Field size for mayhem::AllianceRoutine / FlipPose (project field width x height).
 inline constexpr double fieldLength = 17.548;
 inline constexpr double fieldWidth = 8.052;
-inline constexpr mayhem::Pose startPose{2,4,0};
+inline constexpr mayhem::Pose startPose{7.2,4.026,3.141592653589793};
 namespace routine_0 {
 inline constexpr std::string_view name = "Score L4 in place";
-inline constexpr mayhem::Pose startPose{2,4,0};
+inline constexpr mayhem::Pose startPose{7.2,4.026,3.141592653589793};
 inline bool guard_0([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
 inline bool guard_1([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
 inline constexpr std::array<mayhem::AutoNode,3> nodes = {{
-  {"raise",mayhem::NodeKind::Action,{},5,"superstructure.scoreL4",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
-  {"stow",mayhem::NodeKind::Action,{},5,"superstructure.stow",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
-  {"done",mayhem::NodeKind::Finish,{},1,"",{4.5,12,12.566370614359172,26.17993877991494,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"raise",mayhem::NodeKind::Action,{},5,"superstructure.scoreL4",{3.5,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"stow",mayhem::NodeKind::Action,{},5,"superstructure.stow",{3.5,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"done",mayhem::NodeKind::Finish,{},1,"",{3.5,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
 }};
 inline constexpr std::array<mayhem::AutoTransition,2> transitions = {{
   {"at-l4","raise","stow",guard_0},
@@ -33,18 +33,51 @@ inline constexpr std::array<std::string_view,0> signalKeys = {};
 inline constexpr mayhem::RoutineView routine{"score-l4-in-place","raise",nodes.data(),nodes.size(),transitions.data(),transitions.size(),nullptr,0};
 // Path preview: the editor's path-only playback, about every 0.1 m, blue origin (mayhem::PreviewPath).
 inline constexpr std::array<mayhem::Pose,1> preview = {{
-  {2,4,0},
+  {7.2,4.026,3.1416},
+}};
+inline constexpr mayhem::RoutineInfo info{name,routine,startPose,preview.data(),preview.size()};
+}
+namespace routine_1 {
+inline constexpr std::string_view name = "Drive to reef and score L4";
+inline constexpr mayhem::Pose startPose{7.2,4.026,3.141592653589793};
+inline bool guard_0([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
+inline bool guard_1([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
+inline bool guard_2([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
+inline bool guard_3([[maybe_unused]] const mayhem::RobotHooks& h) { return (std::optional<bool>{true}).value_or(false); }
+inline constexpr std::array<mayhem::AutoNode,5> nodes = {{
+  {"to-reef",mayhem::NodeKind::Pose,{{5.85,4.026,3.141592653589793},0.03,0.03490658503988659,0.15,0.2,0,mayhem::HeadingMode::Fixed,0,0,false,false,true,nullptr,0,0},6,"",{1.5,6,6,12,5,3,0.45,2,0,true},nullptr,0,-1,false},
+  {"raise",mayhem::NodeKind::Action,{},5,"superstructure.scoreL4",{3.5,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"stow",mayhem::NodeKind::Action,{},5,"superstructure.stow",{3.5,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"back-off",mayhem::NodeKind::Pose,{{6.8,4.026,3.141592653589793},0.03,0.03490658503988659,0.15,0.2,0,mayhem::HeadingMode::Fixed,0,0,false,false,true,nullptr,0,0},6,"",{2,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
+  {"done",mayhem::NodeKind::Finish,{},1,"",{3.5,6,6,12,5,3,0.45,2,0,false},nullptr,0,-1,false},
+}};
+inline constexpr std::array<mayhem::AutoTransition,4> transitions = {{
+  {"at-reef","to-reef","raise",guard_0},
+  {"at-l4","raise","stow",guard_1},
+  {"stowed","stow","back-off",guard_2},
+  {"clear","back-off","done",guard_3},
+}};
+// Signal keys the guards read (AutoRunner::BindSignal / Unbound).
+inline constexpr std::array<std::string_view,0> signalKeys = {};
+inline constexpr mayhem::RoutineView routine{"reef-l4","to-reef",nodes.data(),nodes.size(),transitions.data(),transitions.size(),nullptr,0};
+// Path preview: the editor's path-only playback, about every 0.1 m, blue origin (mayhem::PreviewPath).
+inline constexpr std::array<mayhem::Pose,20> preview = {{
+  {7.2,4.026,3.1416},{7.092,4.026,3.1416},{6.983,4.026,3.1416},{6.863,4.026,3.1416},{6.743,4.026,3.1416},{6.623,4.026,3.1416},
+  {6.503,4.026,3.1416},{6.383,4.026,3.1416},{6.263,4.026,3.1416},{6.143,4.026,3.1416},{6.04,4.026,3.1416},{5.931,4.026,3.1416},
+  {6.046,4.026,3.1416},{6.147,4.026,3.1416},{6.265,4.026,3.1416},{6.385,4.026,3.1416},{6.505,4.026,3.1416},{6.611,4.026,3.1416},
+  {6.718,4.026,3.1416},{6.8,4.026,3.1416},
 }};
 inline constexpr mayhem::RoutineInfo info{name,routine,startPose,preview.data(),preview.size()};
 }
 // Every routine in project order: {name (chooser label), routine, startPose}.
-inline constexpr std::array<mayhem::RoutineInfo,1> routines = {{
+inline constexpr std::array<mayhem::RoutineInfo,2> routines = {{
   routine_0::info,
+  routine_1::info,
 }};
 // All routines as one "Autonomous" mayhem-machine manifest; transition IDs are "<routine>/<transition>".
 namespace autonomous {
 inline constexpr std::array<std::string_view,1> manifestParts = {{
-  "{\"format\":\"mayhem-machine\",\"id\":\"Autonomous\",\"initial\":\"raise\",\"inputs\":[],\"name\":\"Autonomous\",\"states\":[{\"description\":\"Superstructure goal L4; done when Motion reaches AT_GOAL.\",\"id\":\"raise\",\"name\":\"Raise to L4\"},{\"description\":\"Superstructure goal STOW; done when Motion reaches AT_GOAL.\",\"id\":\"stow\",\"name\":\"Stow\"},{\"id\":\"done\",\"name\":\"Auto complete\"}],\"transitions\":[{\"condition\":{\"kind\":\"always\"},\"from\":\"raise\",\"id\":\"score-l4-in-place/at-l4\",\"to\":\"stow\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"stow\",\"id\":\"score-l4-in-place/stowed\",\"to\":\"done\"}],\"version\":1}",
+  "{\"format\":\"mayhem-machine\",\"id\":\"Autonomous\",\"initial\":\"raise\",\"inputs\":[],\"name\":\"Autonomous\",\"states\":[{\"description\":\"Superstructure goal L4; done when Motion reaches AT_GOAL.\",\"id\":\"raise\",\"name\":\"Raise to L4\"},{\"description\":\"Superstructure goal STOW; done when Motion reaches AT_GOAL.\",\"id\":\"stow\",\"name\":\"Stow\"},{\"id\":\"done\",\"name\":\"Auto complete\"},{\"description\":\"Bumpers about 10 cm from the reef's face toward the start line; slow approach so it doesn't overshoot into the reef.\",\"id\":\"to-reef\",\"name\":\"Drive to the reef face\"},{\"id\":\"back-off\",\"name\":\"Back off\"}],\"transitions\":[{\"condition\":{\"kind\":\"always\"},\"from\":\"raise\",\"id\":\"score-l4-in-place/at-l4\",\"to\":\"stow\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"stow\",\"id\":\"score-l4-in-place/stowed\",\"to\":\"done\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"to-reef\",\"id\":\"reef-l4/at-reef\",\"to\":\"raise\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"raise\",\"id\":\"reef-l4/at-l4\",\"to\":\"stow\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"stow\",\"id\":\"reef-l4/stowed\",\"to\":\"back-off\"},{\"condition\":{\"kind\":\"always\"},\"from\":\"back-off\",\"id\":\"reef-l4/clear\",\"to\":\"done\"}],\"version\":1}",
 }};
 inline constexpr mayhem::ManifestView manifest{manifestParts.data(),manifestParts.size()};
 }

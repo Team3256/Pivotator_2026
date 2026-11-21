@@ -5,6 +5,7 @@
 
 #include <array>
 
+#include <frc/geometry/Pose2d.h>
 #include <frc/geometry/Pose3d.h>
 
 /**
@@ -49,13 +50,6 @@ inline constexpr double kPivotAngleAtCadRad = 0.0;
 inline constexpr double kWristAngleAtCadRad = 0.0;
 
 /**
- * There's no drivetrain code yet, so the robot is parked at a fixed spot on the field. Mayhem
- * and AdvantageScope need a robot pose to hang the components on. Replace with the real odometry
- * pose once the robot drives.
- */
-frc::Pose3d ParkedRobotPose();
-
-/**
  * @param pivotRad pivot angle; positive tilts the elevator UP from flat
  * @param elevatorMeters carriage travel from fully retracted (Elevator::GetPositionMeters)
  * @param wristRad wrist angle; positive tips the end effector UP (same sense as the pivot)
@@ -63,7 +57,10 @@ frc::Pose3d ParkedRobotPose();
 std::array<frc::Pose3d, kNumComponents> ComponentPoses(double pivotRad, double elevatorMeters,
                                                        double wristRad);
 
-/** Logs the measured component poses ("RobotVisualizer/ComponentPoses") and the robot pose. */
-void Update(double pivotRad, double elevatorMeters, double wristRad);
+/**
+ * Logs the measured component poses ("RobotVisualizer/ComponentPoses") and the robot's estimated
+ * pose ("RobotVisualizer/RobotPose") to hang them on.
+ */
+void Update(const frc::Pose2d& robotPose, double pivotRad, double elevatorMeters, double wristRad);
 
 }  // namespace RobotVisualizer
