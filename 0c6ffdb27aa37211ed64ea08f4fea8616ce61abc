@@ -1,0 +1,13 @@
+{
+  "format": "mayhem-proof",
+  "version": 1,
+  "proofs": [
+    {
+      "by": "Claude",
+      "ran": 38,
+      "failed": [],
+      "different": [],
+      "at": "2026-11-21T05:24:33.390Z"
+    }
+  ]
+}
