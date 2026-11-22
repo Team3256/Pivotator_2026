@@ -10,28 +10,38 @@
 
 #include "subsystems/endeffector/EndEffectorIO.h"
 
-/** One Kraken on the rollers, a CANrange watching for coral. */
+/** A Kraken X60 on the top roller, two Kraken X44s on the side wheels, a CANrange for coral. */
 class EndEffectorIOTalonFX : public EndEffectorIO {
  public:
   EndEffectorIOTalonFX();
 
   void UpdateInputs(EndEffectorIOInputs& inputs) override;
-  void SetVoltage(double volts) override;
+  void SetVoltage(double topVolts, double sideVolts) override;
   void Off() override;
 
  protected:
-  ctre::phoenix6::hardware::TalonFX m_motor;
+  /** A motor and the status signals read from it. */
+  struct Motor {
+    Motor(int id, std::string_view bus);
+    bool Refresh(RollerMotorInputs& out);
+
+    ctre::phoenix6::hardware::TalonFX device;
+    ctre::phoenix6::StatusSignal<units::turns_per_second_t>& velocity;
+    ctre::phoenix6::StatusSignal<units::volt_t>& voltage;
+    ctre::phoenix6::StatusSignal<units::ampere_t>& statorCurrent;
+    ctre::phoenix6::StatusSignal<units::ampere_t>& supplyCurrent;
+    ctre::phoenix6::StatusSignal<units::celsius_t>& temp;
+  };
+
+  Motor m_top;
+  Motor m_sideLeader;
+  Motor m_sideFollower;
   ctre::phoenix6::hardware::CANrange m_canRange;
 
  private:
   ctre::phoenix6::controls::VoltageOut m_voltageRequest;
   ctre::phoenix6::controls::NeutralOut m_neutralRequest;
 
-  ctre::phoenix6::StatusSignal<units::turns_per_second_t>& m_velocity;
-  ctre::phoenix6::StatusSignal<units::volt_t>& m_voltage;
-  ctre::phoenix6::StatusSignal<units::ampere_t>& m_statorCurrent;
-  ctre::phoenix6::StatusSignal<units::ampere_t>& m_supplyCurrent;
-  ctre::phoenix6::StatusSignal<units::celsius_t>& m_temp;
   ctre::phoenix6::StatusSignal<units::meter_t>& m_distance;
   ctre::phoenix6::StatusSignal<bool>& m_detected;
 };

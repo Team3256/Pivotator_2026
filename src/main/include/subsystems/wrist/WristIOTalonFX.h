@@ -10,6 +10,7 @@
 
 #include "subsystems/wrist/WristIO.h"
 
+/** The wrist's one Kraken X44 (through a belt and the cycloidals). */
 class WristIOTalonFX : public WristIO {
  public:
   WristIOTalonFX();
@@ -21,8 +22,7 @@ class WristIOTalonFX : public WristIO {
   void ResetPosition(double degrees) override;
 
  protected:
-  ctre::phoenix6::hardware::TalonFX m_leader;
-  ctre::phoenix6::hardware::TalonFX m_follower;
+  ctre::phoenix6::hardware::TalonFX m_motor;
 
  private:
   ctre::phoenix6::controls::MotionMagicVoltage m_motionMagicRequest;
@@ -32,8 +32,6 @@ class WristIOTalonFX : public WristIO {
   ctre::phoenix6::StatusSignal<units::turn_t>& m_position;
   ctre::phoenix6::StatusSignal<units::turns_per_second_t>& m_velocity;
   ctre::phoenix6::StatusSignal<units::volt_t>& m_voltage;
-  ctre::phoenix6::StatusSignal<units::ampere_t>& m_leaderStator;
-  ctre::phoenix6::StatusSignal<units::celsius_t>& m_leaderTemp;
-  ctre::phoenix6::StatusSignal<units::ampere_t>& m_followerStator;
-  ctre::phoenix6::StatusSignal<units::celsius_t>& m_followerTemp;
+  ctre::phoenix6::StatusSignal<units::ampere_t>& m_stator;
+  ctre::phoenix6::StatusSignal<units::celsius_t>& m_temp;
 };

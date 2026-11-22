@@ -8,21 +8,34 @@
 
 namespace EEC = EndEffectorConstants;
 
+namespace {
+
+void Read(const mayhem::sim::TalonFx& motor, RollerMotorInputs& out) {
+  out.connected = true;
+  out.velocityRps = motor.Velocity();
+  out.voltage = motor.MotorVoltage();
+  out.statorCurrent = motor.StatorCurrent();
+  out.supplyCurrent = motor.SupplyCurrent();
+  out.tempCelsius = 25.0;
+}
+
+}  // namespace
+
 EndEffectorIOSim::EndEffectorIOSim() {
-  sim::PhysicsWorld::Get().AttachMotor(sim::Mechanism::kEndEffector, m_motor, EEC::kMotorConfigs,
-                                       mayhem::sim::DcMotor::KrakenX44(),
-                                       mayhem::sim::DcMotor::KrakenX44Foc());
+  auto& world = sim::PhysicsWorld::Get();
+  world.AttachMotor(sim::Mechanism::kEndEffectorTop, m_top.device, EEC::kTopMotorConfigs,
+                    mayhem::sim::DcMotor::KrakenX60(), mayhem::sim::DcMotor::KrakenX60Foc());
+  for (auto* side : {&m_sideLeader, &m_sideFollower}) {
+    world.AttachMotor(sim::Mechanism::kEndEffectorSides, side->device, EEC::kSideMotorConfigs,
+                      mayhem::sim::DcMotor::KrakenX44(), mayhem::sim::DcMotor::KrakenX44Foc());
+  }
 }
 
 void EndEffectorIOSim::UpdateInputs(EndEffectorIOInputs& inputs) {
   auto& world = sim::PhysicsWorld::Get();
-  const auto& motor = world.Motor(m_motor);
-  inputs.motorConnected = true;
-  inputs.velocityRps = motor.Velocity();
-  inputs.voltage = motor.MotorVoltage();
-  inputs.statorCurrent = motor.StatorCurrent();
-  inputs.supplyCurrent = motor.SupplyCurrent();
-  inputs.tempCelsius = 25.0;
+  Read(world.Motor(m_top.device), inputs.top);
+  Read(world.Motor(m_sideLeader.device), inputs.sideLeader);
+  Read(world.Motor(m_sideFollower.device), inputs.sideFollower);
   inputs.sensorConnected = true;
   inputs.hasCoral = world.HasCoral();
   inputs.sensorDistanceMeters = inputs.hasCoral ? 0.03 : 0.5;

@@ -52,8 +52,11 @@ inline constexpr units::hertz_t kUpdateFrequency = 50_Hz;
 /** 2x Kraken X60, 12T SplineXS pinion -> 50T 20DP gear on the drive shaft = 4.1667:1. */
 inline constexpr double kGearRatio = 50.0 / 12.0;
 
-/** 30T HTD5 drive pulley (WCP-0562). Pitch diameter = teeth * 5 mm / pi. */
-inline constexpr double kDrivePulleyTeeth = 30;
+/**
+ * 36T HTD5 drive pulley: the CAD (ascope_assets model_0) has a "36t Aluminum Pulley (HTD 5mm,
+ * 15mm Wide)" on each 50T gear shaft, about 2.4" across. Pitch diameter = teeth * 5 mm / pi.
+ */
+inline constexpr double kDrivePulleyTeeth = 36;
 inline constexpr double kDrumRadiusMeters = (kDrivePulleyTeeth * 0.005 / std::numbers::pi) / 2.0;
 
 /**

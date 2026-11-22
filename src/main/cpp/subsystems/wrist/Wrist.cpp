@@ -29,15 +29,12 @@ void Wrist::Periodic() {
 
 void Wrist::LogInputs() const {
   const WristIOInputs& in = m_inputs;
-  Log::Record("Wrist/Inputs/LeaderConnected", in.leaderConnected);
-  Log::Record("Wrist/Inputs/FollowerConnected", in.followerConnected);
+  Log::Record("Wrist/Inputs/MotorConnected", in.motorConnected);
   Log::Record("Wrist/Inputs/PositionDeg", in.positionDeg);
   Log::Record("Wrist/Inputs/VelocityDegPerSec", in.velocityDegPerSec);
-  Log::Record("Wrist/Inputs/LeaderVoltage", in.leaderVoltage);
-  Log::Record("Wrist/Inputs/LeaderStatorCurrent", in.leaderStatorCurrent);
-  Log::Record("Wrist/Inputs/FollowerStatorCurrent", in.followerStatorCurrent);
-  Log::Record("Wrist/Inputs/LeaderTempCelsius", in.leaderTempCelsius);
-  Log::Record("Wrist/Inputs/FollowerTempCelsius", in.followerTempCelsius);
+  Log::Record("Wrist/Inputs/Voltage", in.voltage);
+  Log::Record("Wrist/Inputs/StatorCurrent", in.statorCurrent);
+  Log::Record("Wrist/Inputs/TempCelsius", in.tempCelsius);
 }
 
 frc2::CommandPtr Wrist::SetAngle(double degrees) {

@@ -112,7 +112,8 @@ PhysicsWorld::PhysicsWorld() {
              Rad(WC::kBootAngleDeg),
              0,
              0};
-  m_endEffector = {EEC::Sim::kRollerInertia, EEC::kGearRatio, 0.0};
+  m_topRoller = {EEC::Sim::kTopRollerInertia, EEC::kTopGearRatio, 0.0};
+  m_sideWheels = {EEC::Sim::kSideRollerInertia, EEC::kSideGearRatio, 0.0};
   m_hasCoral = EEC::Sim::kPreload;
 }
 
@@ -265,20 +266,25 @@ void PhysicsWorld::StepMechanisms(double dt, double bus) {
   m_wrist.SetPitchOffset(pivotAngle);
   step(Mechanism::kWrist, m_wrist);
 
-  // A held coral is a little extra load on the roller.
-  m_endEffector.loadTorque = m_hasCoral ? 0.05 : 0.0;
-  step(Mechanism::kEndEffector, m_endEffector);
+  // A held coral is a little extra load on the rollers.
+  m_topRoller.loadTorque = m_hasCoral ? 0.05 : 0.0;
+  m_sideWheels.loadTorque = m_hasCoral ? 0.05 : 0.0;
+  step(Mechanism::kEndEffectorTop, m_topRoller);
+  step(Mechanism::kEndEffectorSides, m_sideWheels);
 }
 
 void PhysicsWorld::StepCoral(double dt) {
-  // Roller speed in rotations per second; positive pulls coral in.
-  const double rollerRps = m_endEffector.Velocity() / (2 * std::numbers::pi);
+  // Wheel surface speeds (m/s); positive pulls coral in. The coral moves only when the top roller
+  // and the side wheels both push it the same way.
+  const double top = m_topRoller.Velocity() * EEC::kTopWheelRadiusMeters;
+  const double sides = m_sideWheels.Velocity() * EEC::kSideWheelRadiusMeters;
+  const double pullingIn = std::min(top, sides), pushingOut = std::max(top, sides);
   const bool atStation =
       std::abs(Deg(m_pivot.Angle()) - EEC::Sim::kIntakePivotDeg) < EEC::Sim::kIntakeToleranceDeg &&
       std::abs(Deg(m_wrist.Angle()) - EEC::Sim::kIntakeWristDeg) < EEC::Sim::kIntakeToleranceDeg &&
       m_elevator.Position() < EEC::Sim::kIntakeMaxElevatorMeters;
 
-  if (!m_hasCoral && atStation && rollerRps > EEC::Sim::kMoveSpeedRps) {
+  if (!m_hasCoral && atStation && pullingIn > EEC::Sim::kMoveSurfaceSpeed) {
     // The station feeds a coral; it takes a moment of rolling to pull it in.
     m_coralTransfer += dt;
     if (m_coralTransfer >= EEC::Sim::kTransferSeconds) {
@@ -286,7 +292,7 @@ void PhysicsWorld::StepCoral(double dt) {
       m_coralTransfer = 0;
       m_metrics.intaked++;
     }
-  } else if (m_hasCoral && rollerRps < -EEC::Sim::kMoveSpeedRps) {
+  } else if (m_hasCoral && pushingOut < -EEC::Sim::kMoveSurfaceSpeed) {
     // Rolling outward pushes the coral out (onto the reef at a scoring height).
     m_coralTransfer -= dt;
     if (m_coralTransfer <= -EEC::Sim::kTransferSeconds) {
@@ -314,7 +320,8 @@ void PhysicsWorld::Publish() {
   Log::Record("Sim/HasCoral", m_hasCoral);
   Log::Record("Sim/CoralIntaked", static_cast<double>(m_metrics.intaked));
   Log::Record("Sim/CoralScored", static_cast<double>(m_metrics.scoredOwnHub));
-  Log::Record("Sim/EndEffectorRps", m_endEffector.Velocity() / (2 * std::numbers::pi));
+  Log::Record("Sim/TopRollerRps", m_topRoller.Velocity() / (2 * std::numbers::pi));
+  Log::Record("Sim/SideWheelRps", m_sideWheels.Velocity() / (2 * std::numbers::pi));
 }
 
 }  // namespace sim

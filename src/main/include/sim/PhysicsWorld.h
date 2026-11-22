@@ -18,7 +18,7 @@
 namespace sim {
 
 /** The simulated mechanisms, one physics plant each. */
-enum class Mechanism { kPivot, kElevator, kWrist, kEndEffector };
+enum class Mechanism { kPivot, kElevator, kWrist, kEndEffectorTop, kEndEffectorSides };
 
 /**
  * What happened during a run, for tests and Mayhem's sim proof (its probe reads these fields).
@@ -95,7 +95,7 @@ class PhysicsWorld {
 
   void ReadControls();
   void StepMechanisms(double dt, double bus);
-  /** Coral in and out of the end effector, from the roller's motion and the arm's pose. */
+  /** Coral in and out of the end effector, from the rollers' motion and the arm's pose. */
   void StepCoral(double dt);
   void Publish();
   MotorEntry* Find(const ctre::phoenix6::hardware::TalonFX& device) const;
@@ -104,11 +104,12 @@ class PhysicsWorld {
   mayhem::sim::Arm m_pivot;
   mayhem::sim::Elevator m_elevator;
   mayhem::sim::Arm m_wrist;
-  mayhem::sim::Roller m_endEffector;
+  mayhem::sim::Roller m_topRoller;
+  mayhem::sim::Roller m_sideWheels;
   mayhem::sim::Battery m_battery;
   Metrics m_metrics;
   bool m_hasCoral = false;
-  /** Seconds the roller has been moving a coral in (positive) or out (negative). */
+  /** Seconds the rollers have been moving a coral in (positive) or out (negative). */
   double m_coralTransfer = 0;
   bool m_brownedOut = false;
   double m_time = 0;

@@ -3,9 +3,24 @@
 
 #include "subsystems/endeffector/EndEffector.h"
 
+#include <string>
 #include <utility>
 
+#include "subsystems/endeffector/EndEffectorConstants.h"
 #include "util/Log.h"
+
+namespace {
+
+void LogMotor(const std::string& prefix, const RollerMotorInputs& in) {
+  Log::Record(prefix + "/Connected", in.connected);
+  Log::Record(prefix + "/VelocityRps", in.velocityRps);
+  Log::Record(prefix + "/Voltage", in.voltage);
+  Log::Record(prefix + "/StatorCurrent", in.statorCurrent);
+  Log::Record(prefix + "/SupplyCurrent", in.supplyCurrent);
+  Log::Record(prefix + "/TempCelsius", in.tempCelsius);
+}
+
+}  // namespace
 
 EndEffector::EndEffector(bool enabled, std::unique_ptr<EndEffectorIO> io)
     : DisableSubsystem(enabled, "EndEffector"), m_io{std::move(io)} {}
@@ -20,12 +35,9 @@ void EndEffector::Periodic() {
 
 void EndEffector::LogInputs() const {
   const EndEffectorIOInputs& in = m_inputs;
-  Log::Record("EndEffector/Inputs/MotorConnected", in.motorConnected);
-  Log::Record("EndEffector/Inputs/VelocityRps", in.velocityRps);
-  Log::Record("EndEffector/Inputs/Voltage", in.voltage);
-  Log::Record("EndEffector/Inputs/StatorCurrent", in.statorCurrent);
-  Log::Record("EndEffector/Inputs/SupplyCurrent", in.supplyCurrent);
-  Log::Record("EndEffector/Inputs/TempCelsius", in.tempCelsius);
+  LogMotor("EndEffector/Inputs/Top", in.top);
+  LogMotor("EndEffector/Inputs/SideLeader", in.sideLeader);
+  LogMotor("EndEffector/Inputs/SideFollower", in.sideFollower);
   Log::Record("EndEffector/Inputs/SensorConnected", in.sensorConnected);
   Log::Record("EndEffector/Inputs/SensorDistanceMeters", in.sensorDistanceMeters);
   Log::Record("EndEffector/Inputs/HasCoral", in.hasCoral);
@@ -33,10 +45,14 @@ void EndEffector::LogInputs() const {
 
 frc2::CommandPtr EndEffector::SetVoltage(std::function<double()> volts) {
   return Run([this, volts = std::move(volts)] {
-           m_reqVolts = volts();
-           m_io->SetVoltage(m_reqVolts);
+           Apply(volts());
          })
       .WithName("EndEffector.setVoltage");
+}
+
+void EndEffector::Apply(double volts) {
+  m_reqVolts = volts;
+  m_io->SetVoltage(volts, volts * EndEffectorConstants::kSideVoltsScale);
 }
 
 frc2::CommandPtr EndEffector::SetVoltage(double volts) {

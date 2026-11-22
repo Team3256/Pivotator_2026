@@ -6,7 +6,7 @@
 #include "subsystems/wrist/WristIOTalonFX.h"
 
 /**
- * Simulated wrist: the real TalonFX IO, both motors and the wrist simulated on sim::PhysicsWorld.
+ * Simulated wrist: the real TalonFX IO, its motor and the wrist simulated on sim::PhysicsWorld.
  * Its gravity depends on (pivot + wrist); the world handles that.
  */
 class WristIOSim : public WristIOTalonFX {

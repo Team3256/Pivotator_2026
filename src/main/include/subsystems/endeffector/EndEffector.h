@@ -12,7 +12,11 @@
 #include "subsystems/endeffector/EndEffectorIO.h"
 #include "util/DisableSubsystem.h"
 
-/** End effector rollers and coral sensor. Positive voltage pulls coral in. */
+/**
+ * End effector: top roller + side wheels, and the coral sensor. Positive voltage pulls coral in.
+ * Commands set the top roller's voltage; the side wheels get it scaled by kSideVoltsScale so both
+ * move the coral at the same speed.
+ */
 class EndEffector : public DisableSubsystem {
  public:
   EndEffector(bool enabled, std::unique_ptr<EndEffectorIO> io);
@@ -25,12 +29,15 @@ class EndEffector : public DisableSubsystem {
   frc2::CommandPtr Off();
 
   bool HasCoral() const { return m_inputs.hasCoral; }
-  double VelocityRps() const { return m_inputs.velocityRps; }
+  /** Roller rotations per second. */
+  double TopRollerRps() const { return m_inputs.top.velocityRps; }
+  double SideWheelRps() const { return m_inputs.sideLeader.velocityRps; }
 
   frc2::Trigger hasCoral{[this] { return HasCoral(); }};
 
  private:
   void LogInputs() const;
+  void Apply(double volts);
 
   std::unique_ptr<EndEffectorIO> m_io;
   EndEffectorIOInputs m_inputs;

@@ -6,7 +6,7 @@
 #include "subsystems/endeffector/EndEffectorIOTalonFX.h"
 
 /**
- * Simulated end effector: the real TalonFX IO, the roller simulated on sim::PhysicsWorld, and
+ * Simulated end effector: the real TalonFX IO, the top roller and side wheels simulated on sim::PhysicsWorld, and
  * the coral sensor answered by the world (which tracks whether a coral is in the end effector).
  */
 class EndEffectorIOSim : public EndEffectorIOTalonFX {
