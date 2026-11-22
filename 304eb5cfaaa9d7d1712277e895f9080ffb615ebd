@@ -1,0 +1,24 @@
+{
+  "format": "mayhem-proof",
+  "version": 1,
+  "proofs": [
+    {
+      "before": "fa45222713cd2b290e2e4f3ddc73fb358164f0b1",
+      "by": "claude",
+      "ran": 41,
+      "failed": [],
+      "different": [
+        "Tap X",
+        "Hold X for 2 s",
+        "Tap Y",
+        "Hold Y for 2 s",
+        "Auto: Score L4 in place",
+        "Y goes to L4",
+        "Coral intake from L4 pulls the elevator in first",
+        "A stows from L3",
+        "Score the preload at L4, then it stows"
+      ],
+      "at": "2026-11-22T05:18:32.395Z"
+    }
+  ]
+}
